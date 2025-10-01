@@ -4,13 +4,13 @@
  * for flag manipulation and parser management.
  */
 import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags";
-import {Parsers, withParsers} from "./match";
+import {Parsers, withParsers, matchRaw, matchAndExtract, Result, RawResult, Extracted} from "./match";
 import {group, special} from "./generic";
 import {asString, re} from "./re";
 import {quantifier} from "./generic/builders";
-import {p} from "./generic/templates";
 import {replacedPattern} from "./generic/transformations";
 import {space} from "./generic/patterns";
+import {escape} from "./special";
 
 
 
@@ -26,6 +26,15 @@ declare global {
          *
          * @example
          * re`^something&`.withFlags('gm')
+         *
+         * @example
+         * g: "Global search (find all matches, not just the first)",
+         * i: "Ignore case (case-insensitive match)",
+         * m: "Multiline (treat ^ and $ as start/end of each line)",
+         * s: "Dotall (dot `.` matches newlines too)",
+         * u: "Unicode (treat pattern as a sequence of Unicode code points)",
+         * y: "Sticky (match only from lastIndex position in the target string)",
+         * d: "hasIndices"
          *
          * */
         withFlags(flags?: RegExpFlags): RegExp;
@@ -130,7 +139,7 @@ declare global {
          *   }
          * });
          */
-        withParsers(parsers?: Parsers): RegExp;
+        withParsers(parsers: Parsers): RegExp;
 
         /**
          * Wraps the current RegExp with prefix and suffix patterns.
@@ -202,6 +211,51 @@ declare global {
          * const flexible = /name: value/.spaced(); // Matches "name:value", "name: value", "name:  value", etc.
          */
         spaced(): RegExp;
+
+        /**
+         * Performs regex matching with the current RegExp pattern.
+         * Returns an object that behaves like the extracted data but provides access to raw, parsed, and value.
+         * 
+         * @param input - The input string to search
+         * @param options - Optional matching parameters
+         * @returns Object that acts like extracted data with .raw, .parsed, and .value properties
+         * 
+         * @example
+         * const result = /name: (?<name>\w+)/.match("name: John");
+         * console.log(result.name); // "John" (extracted data)
+         * console.log(result.raw);  // Raw match data
+         * console.log(result.parsed); // Parsed match data
+         * console.log(result.value); // Extracted value
+         */
+        match(input: string, options?: {maxMatches?: number | null, offset?: number, flags?: RegExpFlags, lastIndex?: number, name?: string, cacheInput?: boolean}): Result;
+
+        /**
+         * Performs raw regex matching with the current RegExp pattern.
+         * Returns a MatchRawResult with detailed position and group information.
+         * 
+         * @param input - The input string to search
+         * @param options - Optional matching parameters
+         * @returns MatchRawResult with .result getter for accessing all data
+         * 
+         * @example
+         * const rawResult = /name: (?<name>\w+)/.matchRaw("name: John");
+         * const result = rawResult.result; // Access the proxy object
+         */
+        matchRaw(input: string, options?: {maxMatches?: number | null, offset?: number, flags?: RegExpFlags, lastIndex?: number, name?: string, cacheInput?: boolean}): RawResult;
+
+        /**
+         * Performs regex matching and extracts structured data in one step.
+         * Returns the extracted data directly without the proxy wrapper.
+         * 
+         * @param input - The input string to search
+         * @param options - Optional matching parameters
+         * @returns Extracted data in various structured formats
+         * 
+         * @example
+         * const data = /name: (?<name>\w+)/.matchAndExtract("name: John");
+         * console.log(data.name); // "John"
+         */
+        matchAndExtract(input: string, options?: {maxMatches?: number | null, offset?: number, flags?: RegExpFlags, lastIndex?: number, name?: string, cacheInput?: boolean}): Extracted;
     }
 }
 
@@ -234,7 +288,6 @@ export function addToPrototype() {
      * Creates non-enumerable, configurable properties to avoid interference.
      */
     const def = (k: string, v: Function) => {
-        console.log(`setting RegExp.${k}`);
         Object.defineProperty(RegExp.prototype, k, {value: v, configurable: true});
     }
 
@@ -264,7 +317,14 @@ export function addToPrototype() {
      * If only one parameter is provided, it's used for both sides.
      */
     def('wrappedWith', function (this: RegExp, before: string | RegExp | undefined, after?: string | RegExp | undefined ) {
-        return re`${before ?? ''}${this}${after ?? before ?? ''}`
+        if (typeof before === 'string' && !before.includes('\\')) {
+            before = escape(before);
+        }
+        after = after ?? before ?? '';
+        if (typeof (after) === 'string' && !after.includes('\\')){
+            after = escape(after);
+        }
+        return re`${before ?? ''}${this}${after}`
     });
 
     /**
@@ -312,5 +372,29 @@ export function addToPrototype() {
     def('spaced', function (this: RegExp) {
         const spacedPattern = replacedPattern({" ": space});
         return spacedPattern`${this}`;
+    });
+
+    /**
+     * Implementation of the 'match' method - performs regex matching.
+     * Returns an object that behaves like the extracted data but provides access to raw, parsed, and value.
+     */
+    def('match', function (this: RegExp, input: string, options: any = {}) {
+        return matchRaw(input, this, options).result;
+    });
+
+    /**
+     * Implementation of the 'matchRaw' method - performs raw regex matching.
+     * Returns a MatchRawResult with detailed position and group information.
+     */
+    def('matchRaw', function (this: RegExp, input: string, options: any = {}) {
+        return matchRaw(input, this, options);
+    });
+
+    /**
+     * Implementation of the 'matchAndExtract' method - performs regex matching and extracts data.
+     * Returns the extracted data directly without the proxy wrapper.
+     */
+    def('matchAndExtract', function (this: RegExp, input: string, options: any = {}) {
+        return matchAndExtract(input, this, options);
     });
 }

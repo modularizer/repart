@@ -6,79 +6,211 @@ A TypeScript library for building complex regular expressions and parsing struct
 
 > **Use this for complex stuff** - when your pattern gets out of control.
 
-## Quick Reference
+## Styles:
+- We **always** use named groups
+- We **always** use the `d` flag to get the indexes of the matched groups
+- We manipulate the `RegExp` prototype, but not in a descructive way, just to add methods and a `parsers` attribute
+- If that doesn't mesh with you, this library may drive you nuts... sorry
 
-### Template Functions
-- [`re`](#re-template-function) - Build patterns with interpolation: ``re`abc\s${'d'}\sefg${rx}hij${5}` ``
-- [`r`](#r-template-function) - Raw string building: ``r`abc\s${/\d/}\sdef` ``
+## Reference
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Quick Reference](#quick-reference)
+- [When to Use](#when-to-use-reparth)
+- [Named Groups: they're where it's at](#named-groups-theyre-where-its-at)
+- [Custom Parsers](#custom-parsers)
+- [Detailed Reference](#detailed-reference)
+- [Export Reference](#export-reference)
 
-### RegExp Prototype Methods
-- [`.withFlags(flags)`](#withflags) - Replace flags: `/hello/i.withFlags('g')` → `/hello/g`
-- [`.addFlags(flags)`](#addflags) - Add flags: `/hello/i.addFlags('g')` → `/hello/gi`
-- [`.removeFlags(flags)`](#removeflags) - Remove flags: `/hello/gi.removeFlags('i')` → `/hello/g`
-- [`.as(name)`](#as) - Wrap in group: `/\d+/.as('number')` → `/(?<number>\d+)/`
-- [`.wrappedWith(before, after?)`](#wrappedwith) - Wrap with delimiters: `/word/.wrappedWith('"')` → `/"word"/`
-- [`.then(after)`](#then) - Concatenate: `/\d+/.then('\\s*')` → `/\d+\s* /`
-- [`.optional()`](#optional) - Make optional: `/\d+/.optional()` → `/\d+?/`
-- [`.repeated(min?, max?)`](#repeated) - Add quantifiers: `/\d/.repeated(1,3)` → `/\d{1,3}/`
-- [`.spaced()`](#spaced) - Flexible whitespace: `/hello world/.spaced()` → matches "hello world", "hello  world", etc.
-- [`.withParsers(parsers)`](#withparsers) - Add custom parsing: `pattern.withParsers({name: s => s.toUpperCase()})`
+## [^](#reference) Install
+TODO: add to npm, for now: clone
 
-
-## Quick Start
-
+## [^](#reference) Quick Start
 ```typescript
-import {re, matchAndExtract} from 'repart';
+import {re} from 'repart';
 import {EMAIL_PATTERN} from "repart/common";
 import {word, num} from "repart/generic";
 
-// Template-based regex building
-const pattern: RegExp = re`name: ${word.as('name')}, age: ${num.as('age')},\s*email: ${EMAIL_PATTERN}`;
+// Template-based regex building with NAMED GROUPS (required!)
+const nameRx = word.as('name');
+const ageRx = num.as('age');
+const pattern: RegExp = re`name: ${nameRx}, age: ${ageRx},\s*email: ${EMAIL_PATTERN}`;
+console.log(pattern) // /name: (?<name>\w+), age: (?<age>\d+),\s*email: (?<email>(?<emailHandle>[^\s@]+)@(?<emailDomain>[^\s@]+\.(?<emailTLD>[^\s@]+)))/d
 
-// Advanced parsing with custom transformations
-console.log(matchAndExtract("name: John, age: 25, email: john@gmail.com", pattern.withParsers({
-   name: (s: string) => s.toUpperCase()
-})));
-// {
-//     name: 'JOHN',
-//     age: 25,
-//     email: 'john@gmail.com',
-//     emailHandle: 'john',
-//     emailDomain: 'gmail.com',
-//     emailTLD: 'com'
-// }
+const input = "name: John, age: 25, email: john@gmail.com";
+const result = pattern.withParsers({
+  name: (s: string) => s.toUpperCase(),
+}).match(input);
+
+// examine results
+console.log(result.name);  // "JOHN"
+console.log(result.age);   // 25
+console.log(result.email); // "john@gmail.com"
+console.log(result.emailHandle) // "john"
+console.log(result.emailDomain) // "gmail.com"
+
+// get details about the email match
+const emailMatchDetails = result.groups.email;
+const sInd = emailMatchDetails.startIndex;
+const eInd = emailMatchDetails.endIndex;
+console.log(sInd, eInd, input.slice(sInd, eInd)); // 28 42 john@gmail.com
 ```
 
-## Custom Parsers
+## [^](#reference) Quick Reference
+**Template Functions** Similar to `String.raw`, we provide some template functions except they build regexps...
+- [re](#re-template-function) - Build patterns with interpolation: ``re`abc\s${'d'}\sefg${rx}hij${5}` ``
+- [r](#r-template-function) - Just an alias of `String.raw` for building strings, not RegExps: ``r`abc\s${/\d/}\sdef` ``
+- ... and [many more](#export-reference), like ``s4`Builders.*` `` from `repart/md`
+- **how?** - just make a func with this signature `(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) => RegExp`
+
+**Builder methods** added to RegExp can be called on ANY RegExp, made in any way...
+- [.withFlags(flags)](#withflags) - Replace flags: `/hello/i.withFlags('g')` → `/hello/g`, see also [addFlags](#addflags) and [removeFlags](#removeflags)
+- [.as(name)](#as) - Wrap in group: `/\d+/.as('number')` → `/(?<number>\d+)/`
+- [.wrappedWith(before, after?)](#wrappedwith) - Wrap a regexp: `/word/.wrappedWith('"')` → `/"word"/` or `/word/.wrappedWith('1 ', '2')` → `/1 word 2 "/`
+- [.then(after)](#then) - Concatenate: `/\d+/.then('\\s*')` → `/\d+\s* /`
+- [.optional()](#optional) - Make optional: `/\d+/.optional()` → `/\d+?/`
+- [.repeated(min?, max?)](#repeated) - Add quantifiers: `/\d/.repeated(1,3)` → `/\d{1,3}/`
+- [.spaced()](#spaced) - Flexible whitespace: `/hello world/.spaced()` → matches "hello world", "hello  world", etc.
+
+**Parsing Setup** - `.withParsers` helps you setup post-processors, and cascading group processing
+- [.withParsers(parsers)](#withparsers) - Add custom parsing: `pattern.withParsers({name: s => s.toUpperCase()})`
+- [see more details](#withparsers)
+
+**Custom Cascading Match** - match named groups and perform cascading matching/extraction for complex logic
+- [.match(input, options?)](#match) - Match and return proxy object
+    - e.g. `const r = /name: (?<name>\w+)/.match("name: John")`
+      -  ->`{name: "John", raw: {...}, parsed: {...}, value: {...}}`
+    - `.raw` gives the raw match, unparsed, but includes `startIndex`, `endIndex`, `pattern`, `raw`, etc.
+    - `.parsed` gives the parsed raw result, still including all properties in `.raw`
+    - `.value` gives the extracted value that `r` is proxying
+    - [see more](#match)
+- [.matchRaw(input, options?)](#matchraw) - Raw matching to get more details and not do the parsing or extraction steps `MatchRawResult`
+- [.matchAndExtract(input, options?)](#matchandextract) - Direct extraction: returns `any`, commonly `Record<string, any>`
+
+
+## [^](#reference) When to Use RePart
+
+**Use RePart when:**
+
+- Building complex regex patterns that would be unmaintainable otherwise
+- Need to parse structured data from text with custom transformations
+- Working with configuration files, logs, or semi-structured text
+- Want to avoid writing massive regex patterns
+- Need cascading/recursive parsing capabilities
+- **You're comfortable using named groups** `(?<name>pattern)` in your regex patterns
+
+**Don't use RePart when:**
+
+- Simple string matching (use native methods)
+- Performance-critical applications (overhead of parsing system)
+- Simple regex patterns (adds unnecessary complexity)
+- **You prefer unnamed groups** `(pattern)` - RePart won't work with these
+- **You need array-based access** to match results (use `String.match()` instead)
+
+
+
+## [^](#reference) Named Groups: they're where it's at
+**RePart relies heavily on named groups** for all its matching and extraction functionality. This is a core design decision that affects how you use the library:
+
+- **All RePart methods** (`.match()`, `.matchRaw()`, `.matchAndExtract()`) **rely heavily named groups**
+- **Unnamed groups** like `(\w+)` are **not accessible** through RePart's methods
+- **Group names must be unique** within each pattern - duplicate names will cause conflicts
+
+### Create named groups using:
+- the traditional way `/(?<name>.*)/`
+- our custom builder `rx.as`, e.g. `` re`.*`.as('name')`` results in `/(?<name>.*)/`
+
+### What Works vs What Doesn't
+
+```typescript
+// ✅ WORKS - standardNamed groups
+const pattern = /name: (?<name>\w+), age: (?<age>\d+)/;
+const result = pattern.match("name: John, age: 25");
+console.log(result.name); // "John" ✅
+console.log(result.age);  // 25 ✅
+
+// ✅ WORKS - Named groups
+const n = /w+/.as('name');
+const a = re`\d+`.as('age');
+const repartPattern: RegExp = re`name: ${n}, age: ${a}`;
+const repartResult = pattern.match("name: John, age: 25");
+console.log(result.name); // "John" ✅
+console.log(result.age);  // 25 ✅
+
+// ❌ DOESN'T WORK - Unnamed groups
+const badPattern = /name: (\w+), age: (\d+)/;
+const badResult = badPattern.match("name: John, age: 25");
+console.log(badResult[0]); // undefined ❌
+console.log(badResult[1]); // undefined ❌
+
+// ✅ WORKS - Use native String.match() for unnamed groups
+const nativeResult = "name: John, age: 25".match(/name: (\w+), age: (\d+)/);
+console.log(nativeResult[1]); // "John" ✅
+console.log(nativeResult[2]); // "25" ✅
+```
+
+## [^](#reference) Custom Parsers
+Custom parsers can be used many ways. Think of them as callbacks called AFTER each group is matched
+
+#### Ways to use:
+1. convert the result to something else using `groupname: (s: string, opts?: {offet: number}) => any`
+2. ignore the result by using `groupname: null`
+3. do a cascading match by setting the parser to a pattern with `groupname: string |RegExp`
+
+### unnesting
+unnest values by preceding groupname with an underscore, e.g. `_groupname: handler`
+- ``_body: re`name:\s*(?<name>\w+),\s*age:\s*(?<age>\d+)` ``
+  - instead of getting `{body: {name: string, age: number}}`
+  - you get `{name: string, age: number}`
+  - basically you **replace** the originally matched group name with your unnested child group(s) which look like they were higher level matches
+  - useful to create a flatter return structure
+
+### Postprocessing
+postprocess the groups produced using `groups: (data: Record<string, any) => any`
+
 
 ```typescript
 // Simple transformation
+import {re} from "repart";
+
 const pattern = re`name:\s*(?<name>\w+)`.withParsers({
-  name: (s) => s.toUpperCase()
+  name: (s: string) => s.toUpperCase()
 });
+console.log(pattern.match('name: john')) // { name: 'JOHN' }
 
 // Complex transformation with unnesting
-const complexPattern = re`(?<prefix>.*?)name:\s*(?<name>\w+)`.withParsers({
-  name: (s) => s.toUpperCase(),
-  _prefix: null,  // Ignore prefix group
-  groups: (data) => ({ title: data.name })
+const complexPattern = re`(?<indentation>\s*)(?<statement>.*?name):\s*(?<name>\w+)`.withParsers({
+  name: (s: string) => s.toUpperCase(),
+  indentation: null,  // Ignore this group: in practice, this could have been left unnamed, but if it using prebuilt components you may loose flexibility over names
+  groups: (data) => ({ title: data.name, msg: data.statement })
 });
+console.log(complexPattern.match('his name: john')) // { title: 'JOHN', msg: 'his name' }
+
+
 
 // Nested matching
-const nestedPattern = re`user:\s*(?<userData>.*)`.withParsers({
-  _userData: re`name:\s*(?<name>\w+),\s*age:\s*(?<age>\d+)` // Cascading parsing
-});
-```
+const nestedPattern = re`users:\s*(?<users>.*)$`.withFlags('s').withParsers({
+  users: re`name:\s*(?<name>\w+),\s*age:\s*(?<age>\d+)`.withFlags('g') // Cascading parsing
+})
+console.log(nestedPattern.match(`
+    users:
+    - name: john, age: 25
+    - name: sarah, age: 27
+    - name: david, age: 19
+    `))
+// {
+//     users: [
+//         { name: 'john', age: 25 },
+//         { name: 'sarah', age: 27 },
+//         { name: 'david', age: 19 }
+//     ]
+// }
 
-### Parser Types
-- **Functions**: `(raw: string) => any` - Transform matched content
-- **RegExp**: For nested matching - Parse matched content with another pattern
-- **null**: To ignore a group - Exclude from results
-- **`_groupName`**: Unnest results - Flatten nested objects
+```
 
 ---
 
-## Detailed Reference
+## [^](#reference) Detailed Reference
 
 
 ### `re` Template Function
@@ -107,36 +239,22 @@ const parsedPattern = re`${/\d+/.withParsers({id: parseInt)}}`;
 ```
 ---
 ### `r` Template Function
-Build raw strings without regex compilation - useful for pattern building.
-
-**Key Features:**
 - Alias for `String.raw` - preserves backslashes
-- No regex compilation - returns plain strings
-- Useful for building patterns that will be used in other contexts
-- Interpolates RegExp objects by converting to their source
 
-```typescript
-const rawPattern = r`word${/\d+/}end`; // "word\\d+end"
-
-// Building patterns for later use
-const basePattern = r`\d{${count}}`; // "\\d{3}"
-const finalPattern = new RegExp(`^${basePattern}$`); // /^\d{3}$/
-
-// Complex string building
-const complexRaw = r`${/\w+/}${/\d+/}${/\s+/}`; // "\\w+\\d+\\s+"
-```
 ---
 ### `.as(name)`
 Wrap pattern in named group or special group type.
 
+**⚠️ Important:** Group names must be **unique** within each pattern. Duplicate names will cause conflicts and unexpected behavior.
+
 **Special Group Types:**
-- `'unnamed'` - Regular capturing group `(pattern)`
-- `'noncapturing'` - Non-capturing group `(?:pattern)`
-- `'lookahead'` - Positive lookahead `(?=pattern)`
-- `'lookbehind'` - Positive lookbehind `(?<=pattern)`
-- `'notlookahead'` - Negative lookahead `(?!pattern)`
-- `'notlookbehind'` - Negative lookbehind `(?<!pattern)`
-- `'optional'` - Optional capturing group `(pattern)?`
+- `'unnamed'` - Regular capturing group `(pattern)` - **Not accessible via RePart methods**
+- `'noncapturing'` - Non-capturing group `(?:pattern)` - **Not accessible via RePart methods**
+- `'lookahead'` - Positive lookahead `(?=pattern)` - **Not accessible via RePart methods**
+- `'lookbehind'` - Positive lookbehind `(?<=pattern)` - **Not accessible via RePart methods**
+- `'notlookahead'` - Negative lookahead `(?!pattern)` - **Not accessible via RePart methods**
+- `'notlookbehind'` - Negative lookbehind `(?<!pattern)` - **Not accessible via RePart methods**
+- `'optional'` - Optional capturing group `(pattern)?` - **Not accessible via RePart methods**
 
 ```typescript
 // Named groups
@@ -152,6 +270,7 @@ const lookbehind = /\d+/.as('lookbehind'); // (?<=\d+)
 // Chaining
 const complex = /\d+/.as('id').then('\\s*').as('spaced'); // (?<spaced>(?<id>\d+)\s*)
 ```
+
 ---
 ### `.withFlags(flags)`
 Replace all flags with new ones.
@@ -178,9 +297,18 @@ const noFlags = /pattern/gi.withFlags(''); // /pattern/
 // With RegExp objects
 const complex = re`${/\d+/i}${/\w+/g}`.withFlags('m'); // Combines child flags then replaces
 ```
+
+---
+### `.addFlags(flags)`
+Add flags to existing RegExp without removing existing ones.
+
+---
+### `.removeFlags(flags)`
+Remove certain flags from existing RegExp.
+
 ---
 ### `.withParsers(parsers)`
-Add custom parsing logic to regex patterns.
+Add custom parsing logic to regex patterns. See also [Custom Parsers](#custom-parsers) for more details
 
 **Parser Types:**
 - **Functions**: `(raw: string) => any` - Transform matched content
@@ -218,50 +346,7 @@ const multiPattern = re`(?<id>\d+):(?<name>\w+):(?<score>\d+)`.withParsers({
   })
 });
 ```
----
-### `.addFlags(flags)`
-Add flags to existing RegExp without removing existing ones.
 
-**Key Features:**
-- Adds new flags to existing flags
-- Automatically deduplicates flags
-- Preserves parsers from original RegExp
-
-```typescript
-// Add single flag
-const pattern = /hello/i.addFlags('g'); // /hello/gi
-
-// Add multiple flags
-const multiFlag = /test/.addFlags('gi'); // /test/gi
-
-// Add to already flagged pattern
-const complex = /pattern/gi.addFlags('m'); // /pattern/gim
-
-// With RegExp objects
-const combined = re`${/\d+/i}${/\w+/g}`.addFlags('m'); // Combines child flags then adds 'm'
-```
----
-### `.removeFlags(flags)`
-Remove specified flags from RegExp.
-
-**Key Features:**
-- Removes only specified flags, keeps others
-- Preserves parsers from original RegExp
-- Returns new RegExp with modified flags
-
-```typescript
-// Remove single flag
-const pattern = /hello/gi.removeFlags('i'); // /hello/g
-
-// Remove multiple flags
-const multiRemove = /test/gim.removeFlags('gi'); // /test/m
-
-// Remove all flags
-const noFlags = /pattern/gi.removeFlags('gi'); // /pattern/
-
-// Chaining
-const chained = /test/gi.removeFlags('i').addFlags('m'); // /test/gm
-```
 ---
 ### `.wrappedWith(before, after?)`
 Wrap pattern with delimiters.
@@ -394,9 +479,138 @@ const chained = /\d+ \w+/.spaced().optional(); // /\d+\s+\w+?/
 // Mixed with other whitespace
 const mixed = /\d+\s*\w+ \d+/.spaced(); // /\d+\s*\w+\s+\d+/
 ```
+---
+### `.match(input, options?)`
+Perform regex matching and return a proxy object that behaves like extracted data.
+
+**Key Features:**
+- Returns an object that acts like the extracted data
+- Provides access to `.parsed`, and `.extracted` properties
+- Always available, even when no match is found
+
+**Options:** typically unnecessary, defaults work well...
+- `maxMatches` - Maximum number of matches to return
+  - this gets autoset to Infinity if 
+    - the pattern has the 'g' flag
+    - maxMatches is set to null
+  - gets autoset to 1 if
+    - the pattern does not have the 'g' flag
+- `offset` - Starting position in the string
+- `flags` - Additional flags to apply
+  - if maxMatches is supplied, we autoadd or remove the 'g' flag based on if maxMatches > 1
+- `lastIndex` - Starting index for global patterns
+- `name` - Name for the match result
+- `cacheInput` - Whether to cache the input string
+
+```typescript
+// Basic usage
+const pattern = /name: (?<name>\w+), age: (?<age>\d+)/;
+const result = pattern.match("name: John, age: 25");
+
+// Use like extracted data
+console.log(result.name); // "John"
+console.log(result.age);  // 25
+
+// Access underlying data
+console.log(result.parsed); // Parsed match data
+console.log(result.groups); // Parsed match groups, shortcut to result.parsed.groups
+console.log(result.extracted);  // Extracted data (appears same as result, just is the actual underlying value, typicall a Record<string, any>, not in the custom class)
+console.log(result.value);  // same as .extracted
+
+// With options
+const resultWithOptions = pattern.match("name: John, age: 25", { 
+  cacheInput: true 
+});
+
+// use .value or .extracted for JSON serialization
+console.log(JSON.stringify(result.value));
+
+```
+---
+### `.matchRaw(input, options?)`
+Perform raw regex matching and return a MatchRawResult with detailed information.
+
+**Key Features:**
+- Returns a MatchRawResult with `.result` getter
+- Provides access to detailed match information (indices, groups, etc.)
+- Uses lazy evaluation for parsing and extraction
+- Always available, even when no match is found
+
+**Options:**
+- `maxMatches` - Maximum number of matches to return
+- `offset` - Starting position in the string
+- `flags` - Additional flags to apply
+- `lastIndex` - Starting index for global patterns
+- `name` - Name for the match result
+- `cacheInput` - Whether to cache the input string
+
+```typescript
+// Basic usage
+const pattern = /name: (?<name>\w+), age: (?<age>\d+)/;
+const rawResult = pattern.matchRaw("name: John, age: 25");
+
+// Access the proxy object
+const result = rawResult.result;
+console.log(result.name); // "John"
+console.log(result.age);  // 25
+
+// Access raw data directly
+console.log(rawResult.startIndex); // 0
+console.log(rawResult.endIndex);   // 20
+console.log(rawResult.groups);     // {name: "John", age: "25"}
+
+// With options
+const rawWithOptions = pattern.matchRaw("name: John, age: 25", { 
+  cacheInput: true 
+});
+```
+---
+### `.matchAndExtract(input, options?)`
+Perform regex matching and extract structured data in one step.
+
+**Key Features:**
+- Returns extracted data directly without proxy wrapper
+- Combines matching and extraction in a single call
+- Always available, even when no match is found
+- Returns null when no match is found
+
+**Options:**
+- `maxMatches` - Maximum number of matches to return
+- `offset` - Starting position in the string
+- `flags` - Additional flags to apply
+- `lastIndex` - Starting index for global patterns
+- `name` - Name for the match result
+- `cacheInput` - Whether to cache the input string
+
+```typescript
+// Basic usage
+const pattern = /name: (?<name>\w+), age: (?<age>\d+)/;
+const data = pattern.matchAndExtract("name: John, age: 25");
+
+console.log(data.name); // "John"
+console.log(data.age);  // 25
+
+// With custom parsers
+const parsedPattern = pattern.withParsers({
+  age: parseInt
+});
+const parsedData = parsedPattern.matchAndExtract("name: John, age: 25");
+
+console.log(parsedData.name); // "John"
+console.log(parsedData.age);  // 25 (number)
+
+// With options
+const dataWithOptions = pattern.matchAndExtract("name: John, age: 25", { 
+  cacheInput: true 
+});
+
+// No match returns null
+const noMatch = pattern.matchAndExtract("no match here");
+console.log(noMatch); // null
+```
 
 
-## Export Reference
+## [^](#reference) Export Reference
 
 ### Pattern Constants
 
@@ -510,22 +724,6 @@ const mixed = /\d+\s*\w+ \d+/.spaced(); // /\d+\s*\w+\s+\d+/
 | `matchAnyState` | Match US state from string | `matchAnyState('California')` → {code: 'CA', name: 'California'} |
 | `escape` | Escape regex special characters | `escape('hello.world')` → 'hello\\.world' |
 | `dedup` | Remove duplicate characters | `dedup('aabbcc')` → 'abc' |
-
-## When to Use RePart
-
-**Use RePart when:**
-
-- Building complex regex patterns that would be unmaintainable otherwise
-- Need to parse structured data from text with custom transformations
-- Working with configuration files, logs, or semi-structured text
-- Want to avoid writing massive regex patterns
-- Need cascading/recursive parsing capabilities
-
-**Don't use RePart when:**
-
-- Simple string matching (use native methods)
-- Performance-critical applications (overhead of parsing system)
-- Simple regex patterns (adds unnecessary complexity)
 
 
 ---

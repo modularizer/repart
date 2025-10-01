@@ -59,7 +59,7 @@ export function re(strings: TemplateStringsArray, ...vals: Array<string | number
             out += s;
         }
     }
-    return withParsers((new RegExp(out, dedup(flags))), parsers);
+    return withParsers((new RegExp(out, dedup(flags + "d"))), parsers);
 }
 
 type TemplateFunc = (strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) => any;

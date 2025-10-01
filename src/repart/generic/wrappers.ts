@@ -4,7 +4,7 @@ import {p} from "./templates";
 
 function wrapped(group: string, groupname: string = 'wrapper'){
     return function (strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-        return re`(?<${groupname}>${group})${re(strings, ...vals)}\k<${groupname}>`;
+        return re`(?<${groupname}>${group})(?<key>${re(strings, ...vals)})\k<${groupname}>`;
     }
 }
 export const tripleBacktick = wrapped('```');

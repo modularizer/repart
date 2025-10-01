@@ -1,4 +1,5 @@
-import {asString, dedup, re} from "../re";
+import {asString, re} from "../re";
+import {dedup} from "../flags";
 import {space} from "./patterns";
 
 export function replacedPattern(replacements: Record<string, string | number | RegExp>){

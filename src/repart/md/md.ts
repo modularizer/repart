@@ -53,10 +53,10 @@ export function checkboxLine (strings: TemplateStringsArray, ...vals: Array<stri
 export const agreement = checkboxLine`\*\*(?<key>.*?)\*\* (?<notes>.*)`;
 // [label](url)
 export function linkto(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`\[(?<label>(?:\\.|[^\[\]\\]+))\]\(\s*(?<url>${re(strings, ...vals)})\s*\)`
+    return re`\[\s*(?<label>.*)\s*\]\(\s*(?<url>${re(strings, ...vals)})\s*\)`
 }
 
-export const link = linkto`(?:\\.|[^()\s\\]|(?:\((?:\\.|[^()\\])*\))+)`;
+export const link = linkto`.*`;
 
 export const previewAgreement = li`${checkbox}\-?\s*\*\*(?<key>.*)\*\*\s*(?<pre>.*)${link}(?<post>.*)`;
 

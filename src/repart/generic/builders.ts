@@ -3,8 +3,8 @@ import {re} from "../re";
 
 export function anyOf(...parts: (RegExp | string)[]) {
     let parsers = {};
-    parts.filter(p => p instanceof RegExp && p.parsers).map(p => {
-        Object.assign(parsers, p.parsers);
+    parts.filter(p => p instanceof RegExp && (p as any).parsers).map(p => {
+        Object.assign(parsers, (p as any).parsers);
     })
     const srcs = parts.map(p => p instanceof RegExp ? p.source : p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const flags = [...new Set(parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join(""))].join("");
@@ -12,7 +12,7 @@ export function anyOf(...parts: (RegExp | string)[]) {
 }
 export function noneOf(...parts: (RegExp | string)[]) {
     const alt = parts.map(p => p instanceof RegExp ? `(?:${p.source})` : p).join("|");
-    const flags = [...new Set(parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join(""))].join("");
+    const flags = [...new Set(["d", ...parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join("")])].join("");
     return new RegExp(`(?:(?!${alt})[\s\S])+`, flags);
 }
 
@@ -42,7 +42,7 @@ export function wordList(
     const core = `(?:${body})`;
     const wrapped = wholeWords ? `\\b${core}\\b` : core;
     const named = captureName ? `(?<${captureName}>${wrapped})` : wrapped;
-    return new RegExp(named, ignoreCase ? "i" : "");
+    return new RegExp(named, ignoreCase ? "id" : "d");
 }
 
 

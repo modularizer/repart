@@ -138,8 +138,8 @@ export function buildNumberPatterns({
 
     const sign = String.raw`[+-]?`;
 
-    const INT_PATTERN = new RegExp(`^${sign}${intPart}$`);
-    const FLOAT_PATTERN = new RegExp(`^${sign}${intPart}${decPart}$`);
+    const INT_PATTERN = new RegExp(`^${sign}${intPart}$`, 'd');
+    const FLOAT_PATTERN = new RegExp(`^${sign}${intPart}${decPart}$`, 'd');
 
     return { INT_PATTERN, FLOAT_PATTERN };
 }
@@ -189,12 +189,12 @@ function normalizeNumberString(s: string, locale: NumberLocale): string {
     let result = s.trim();
 
     // remove thousands separators
-    const reThousands = new RegExp(`\\${thousands}`, "g");
+    const reThousands = new RegExp(`\\${thousands}`, "gd");
     result = result.replace(reThousands, "");
 
     // convert decimal separator to "."
     if (decimal !== ".") {
-        const reDecimal = new RegExp(`\\${decimal}`, "g");
+        const reDecimal = new RegExp(`\\${decimal}`, "gd");
         result = result.replace(reDecimal, ".");
     }
 

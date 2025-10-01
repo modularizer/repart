@@ -67,8 +67,8 @@ export type RegExpFlags = string | number | RegExpFlag |  RegExpFlag[];
  * regexpFlags("xyz") // "" (invalid flags removed)
  */
 export function regexpFlags(flags: RegExpFlags | undefined): string {
-    const s = Array.isArray(flags)?flags.join(""):flags ?? "";
-    return dedup(Array.from(s).filter(v => allRegExpFlags.includes(v as RegExpFlag)).join(""));
+    const s = Array.isArray(flags)?flags.join(""):String(flags ?? "");
+    return dedup(Array.from(s).filter(v => allRegExpFlags.includes(v as RegExpFlag)).join("") + "d");
 }
 
 /**
@@ -85,7 +85,7 @@ export function regexpFlags(flags: RegExpFlags | undefined): string {
  */
 export function withFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
     const oldFlags = (rx instanceof RegExp)?rx.flags:"";
-    return (new RegExp(asString(rx), regexpFlags(flags ??oldFlags))).withParsers((rx instanceof RegExp)?rx.parsers:{});
+    return (new RegExp(asString(rx), regexpFlags(flags ?? oldFlags))).withParsers((rx instanceof RegExp)?rx.parsers:{});
 }
 
 /**
@@ -121,10 +121,13 @@ export function addFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
  */
 export function removeFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
     if (rx instanceof RegExp) {
+        if (flags && typeof flags === 'string' && flags.includes("d")){
+            throw new Error("cannot remove 'd' flag needed for indexing")
+        }
         const removedFlags = regexpFlags(flags);
-        const newFlags = Array.from(rx.flags ?? '').filter(v => !removedFlags.includes(v as RegExpFlag)).join("")
+        const newFlags = dedup(Array.from(rx.flags ?? '').filter(v => !removedFlags.includes(v as RegExpFlag)).join("") + "d")
         return (new RegExp(rx.source, newFlags)).withParsers((rx instanceof RegExp)?rx.parsers:{});
     }else{
-        return new RegExp('' + rx)
+        return new RegExp('' + rx, "d")
     }
 }
