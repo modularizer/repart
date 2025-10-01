@@ -1,0 +1,1 @@
+export {decodeHtml, encodeHtml} from './html';
