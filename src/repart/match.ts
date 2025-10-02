@@ -24,7 +24,6 @@
  *  extract(ParsedResult) => Result (custom class)
  *       .extracted: Extracted (bare)
  */
-import {isFloat, isInt, toFloat, toInt} from "./common/numbers";
 import {RegExpFlags} from "./flags";
 import {re} from "./re";
 
@@ -144,7 +143,11 @@ export class RawResult {
             // Copy object properties, avoiding conflicts with getters
             for (const [key, value] of Object.entries(raw)) {
                 if (key !== 'raw' && key !== 'parsed' && key !== 'result' && key !== 'extracted') {
-                    (this as any)[key] = value;
+                    try {
+                        (this as any)[key] = value;
+                    }catch {
+                        throw new Error(`"${key}" cannot be used as a name of a group`);
+                    }
                 }
             }
         }
@@ -184,9 +187,6 @@ export class RawResult {
         return this.raw;
     }
 
-    get value(): Raw {
-        return this.raw;
-    }
 
     /**
      * Custom toString for console.log to display as Raw value
@@ -326,21 +326,7 @@ export type Parsers<K extends string = string> = {
     groups?: GroupsFn;
 } & { [P in Exclude<K, "groups">]?: StringParser };
 
-/** Parser that returns the raw string unchanged */
-const nomodify: StringParser = (raw: string): string => raw;
 
-/**
- * Parser that attempts to convert strings to numbers.
- * Tries integer conversion first, then float, falls back to original string.
- * Handles null/empty values appropriately.
- */
-const numParser: StringParser = (raw: string): string | number | null => {
-    let v = raw.trim();
-    if (!v || v === "null" || v === "NULL") return null;
-    if (isInt(v)) {return toInt(v)}
-    if (isFloat(v)) {return toFloat(v)}
-    return raw;
-}
 
 /**
  * Parser that attempts JSON parsing with fallback to original string.
@@ -443,7 +429,11 @@ export class ParsedResult {
             // Copy object properties, avoiding conflicts with getters
             for (const [key, value] of Object.entries(parsed)) {
                 if (key !== 'raw' && key !== 'parsed' && key !== 'result' && key !== 'extracted') {
-                    (this as any)[key] = value;
+                    try {
+                        (this as any)[key] = value;
+                    }catch {
+                        throw new Error(`"${key}" cannot be used as a name of a group`);
+                    }
                 }
             }
         }
@@ -472,9 +462,6 @@ export class ParsedResult {
      * Returns the underlying parsed result as a plain object.
      */
     valueOf(): Parsed {
-        return this._parsed;
-    }
-    get value(): Parsed {
         return this._parsed;
     }
 
@@ -528,7 +515,7 @@ export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
     const rawName = raw.name ?? '';
     const hasNamedParser = Object.keys(parsers).some(k => k === rawName);
     const hasSilentParser = Object.keys(parsers).some(k => k === '_' + rawName);
-    const parser = (hasNamedParser?parsers[rawName]:parsers['_'+rawName]) ?? defaultStringParser;
+    const parser = (hasNamedParser?parsers[rawName]:parsers['_'+rawName]) ?? parsers['_'] ?? defaultStringParser;
     let parsed: any = raw;
     let rawGroups: Record<string, RawGroupValue> = raw.groups ?? {};
     if ((hasSilentParser && parsers['_'+rawName] === null) || (!hasSilentParser && parsers['_'+rawName] === null)){
@@ -622,7 +609,11 @@ export class Result {
             // Copy object properties, avoiding conflicts with getters
             for (const [key, value] of Object.entries(extracted)) {
                 if (key !== 'raw' && key !== 'parsed' && key !== 'result' && key !== 'extracted') {
-                    (this as any)[key] = value;
+                    try {
+                        (this as any)[key] = value;
+                    }catch {
+                        throw new Error(`"${key}" cannot be used as a name of a group`);
+                    }
                 }
             }
         }
@@ -645,9 +636,6 @@ export class Result {
         return this._extracted;
     }
 
-    get value(): Extracted {
-        return this._extracted;
-    }
 
     /**
      * Returns the underlying parsed result as a plain object.

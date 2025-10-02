@@ -5,11 +5,9 @@
  */
 import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags";
 import {Parsers, withParsers, matchRaw, matchAndExtract, Result, RawResult, Extracted} from "./match";
-import {group, special} from "./generic";
+import {group, special, replacedPattern, space} from "./generic";
 import {asString, re} from "./re";
 import {quantifier} from "./generic/builders";
-import {replacedPattern} from "./generic/transformations";
-import {space} from "./generic/patterns";
 import {escape} from "./special";
 
 
@@ -189,7 +187,7 @@ declare global {
          * Automatically wraps in parentheses if needed for proper grouping.
          * 
          * @param minCount - Minimum number of repetitions (default: 0)
-         * @param maxCount - Maximum number of repetitions (undefined = unlimited, null = unlimited)
+         * @param maxCount - Maximum number of repetitions (undefined = minCount, null = unlimited)
          * @returns A new RegExp with the specified repetition quantifier
          * 
          * @example
@@ -214,18 +212,18 @@ declare global {
 
         /**
          * Performs regex matching with the current RegExp pattern.
-         * Returns an object that behaves like the extracted data but provides access to raw, parsed, and value.
+         * Returns an object that behaves like the extracted data but provides access to raw, parsed, and extraced.
          * 
          * @param input - The input string to search
          * @param options - Optional matching parameters
-         * @returns Object that acts like extracted data with .raw, .parsed, and .value properties
+         * @returns Object that acts like extracted data with .raw, .parsed, and .extracted properties
          * 
          * @example
          * const result = /name: (?<name>\w+)/.match("name: John");
          * console.log(result.name); // "John" (extracted data)
          * console.log(result.raw);  // Raw match data
          * console.log(result.parsed); // Parsed match data
-         * console.log(result.value); // Extracted value
+         * console.log(result.extracted); // Extracted value
          */
         match(input: string, options?: {maxMatches?: number | null, offset?: number, flags?: RegExpFlags, lastIndex?: number, name?: string, cacheInput?: boolean}): Result;
 
@@ -283,6 +281,7 @@ declare global {
  *   .withParsers({greeting: (s) => s.toUpperCase()});
  */
 export function addToPrototype() {
+    // console.log("adding methods to RegExp prototype")
     /**
      * Helper function to define a method on RegExp.prototype.
      * Creates non-enumerable, configurable properties to avoid interference.
@@ -370,7 +369,7 @@ export function addToPrototype() {
      * Uses replacedPattern to replace space characters with consecutive whitespace matching (excluding newlines).
      */
     def('spaced', function (this: RegExp) {
-        const spacedPattern = replacedPattern({" ": space});
+        const spacedPattern = replacedPattern([[/ +/g, space]]);
         return spacedPattern`${this}`;
     });
 

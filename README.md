@@ -713,7 +713,7 @@ console.log(noMatch); // null
 
 | Export | Description | Usage Example |
 |--------|-------------|--------------|
-| `replacedPattern` | Replace characters in pattern | `replacedPattern({' ': '\\s+'})` |
+| `replacedPattern` | Replace characters in pattern | `replacedPattern([[/\s+/, space]])` |
 | `toInt` | Parse string to integer | `toInt('123')` → 123 |
 | `toFloat` | Parse string to float | `toFloat('123.45')` → 123.45 |
 | `isInt` | Check if string is integer | `isInt('123')` → true |

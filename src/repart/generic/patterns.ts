@@ -7,7 +7,7 @@ export const any = re`[\s\S]`;
 export const anything = re`${any}*?`;
 
 /* match all whitespace other than newlines */
-export const space = re`[^\S\r\n]*`;
+export const space = re`[^\S\r\n]+`;
 export const w = re`\w`;
 export const word = re`\w+`;
 export const fullword = re`\b\w+\b`;

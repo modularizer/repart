@@ -12,7 +12,7 @@ export const stateCodes: Record<string, string> = {
     TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington",
     WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
-
+const invMap = Object.fromEntries(Object.entries(stateCodes).map(([k, v]) => [v.toLowerCase(), k]));
 export const stateNames = Object.keys(stateCodes).map(k => stateCodes[k]);
 export const stateAbbrs = Object.keys(stateCodes);
 
@@ -21,16 +21,31 @@ export const STATE_NAME_PATTERN = wordList(stateNames, {
     ignoreCase: true,
     wholeWords: true,
     flexibleSpaces: true,
-    captureName: "statename",
-});
+    captureName: "stateName",
+}).withParsers({
+        _stateName: (s: string) => {
+            const k = s.toLowerCase();
+            const c = invMap[k];
+            return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]};
+        }
+    }
+);
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
 export const STATE_CODE_PATTERN = wordList(stateAbbrs, {
     ignoreCase: false,
     wholeWords: true,
     flexibleSpaces: false,
-    captureName: "statecode",
-});
+    captureName: "stateCode",
+}).withParsers({
+        _stateCode: (s: string) => {
+
+            const u = s.toUpperCase();
+            const name = stateCodes[u];
+            return {stateName: name, stateCode: s.toUpperCase(), state: s.toUpperCase()};
+        }
+    }
+);
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
 export const STATE_PATTERN = wordList([...stateNames,  ...stateAbbrs], {
@@ -38,27 +53,30 @@ export const STATE_PATTERN = wordList([...stateNames,  ...stateAbbrs], {
     wholeWords: true,
     flexibleSpaces: false,
     captureName: "state",
-});
+}).withParsers({
+    _state: (s: string) => {
+
+        const u = s.toUpperCase();
+        const name = stateCodes[u];
+        if (name){
+            return {stateName: name, stateCode: s.toUpperCase(), state: s.toUpperCase()};
+        }
+        const k = s.toLowerCase();
+        const c = invMap[k];
+        return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]}
+    }
+}
+);
 
 export type StateCode = keyof typeof stateCodes;
 
 export interface State {
-    code: StateCode;
-    name: string;
+    stateCode: StateCode;
+    stateName: string;
+    state: string; // either name or code, depending on what was written
 }
 
 // Helper: matches either names or codes (test both to keep abbrs case-sensitive)
 export function matchAnyState(input: string): State | null {
-    const mCode = input.match(STATE_CODE_PATTERN);
-    if (mCode?.groups) return { code: mCode.groups.code, name: stateCodes[mCode.groups.code as keyof typeof stateCodes] };
-
-    const mName = input.match(STATE_NAME_PATTERN);
-    if (mName?.groups) {
-        const name = mName.groups.state!;
-        // normalize spaces to single space to look up
-        const normalized = name.replace(/\s+/g, " ");
-        const code = Object.keys(stateCodes).find((k) => stateCodes[k].toLowerCase() === normalized.toLowerCase())?.[0];
-        return code ? { code, name: stateCodes[code as keyof typeof stateCodes] } : null;
-    }
-    return null;
+    return STATE_PATTERN.matchAndExtract(input);
 }

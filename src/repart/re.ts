@@ -43,7 +43,7 @@ export const r = String.raw;
  */
 export function re(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
     let out = "";
-    let flags = "";
+    let flags = "d";
     let parsers = {};
     for (let i = 0; i < strings.raw.length; i++) {
         out += strings.raw[i];
@@ -59,7 +59,9 @@ export function re(strings: TemplateStringsArray, ...vals: Array<string | number
             out += s;
         }
     }
-    return withParsers((new RegExp(out, dedup(flags + "d"))), parsers);
+    const f = dedup(flags);
+    const p = new RegExp(out, f);
+    return withParsers(p, parsers);
 }
 
 type TemplateFunc = (strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) => any;

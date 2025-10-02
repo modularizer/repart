@@ -63,6 +63,9 @@ export function quantifier(minCount: number=0, maxCount: number | undefined | nu
         if (maxCount === Infinity){
             return "*"
         }
+        if (maxCount == 1){
+            return '?'
+        }
         return `{0,${maxCount}}`
     }
     if (minCount === 1){

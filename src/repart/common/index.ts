@@ -29,6 +29,8 @@ export {
     type PhoneNumber,
     toPhoneNumber,
     isPhoneNumber,
+    GLOBAL_PHONE_NUMBER_PATTERN,
+    US_PHONE_NUMBER_PATTERN,
     PHONE_NUMBER_PATTERN
 } from './phoneNumbers';
 export {

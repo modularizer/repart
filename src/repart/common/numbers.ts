@@ -1,3 +1,6 @@
+import {addToPrototype} from "../global";
+import {re} from "../re";
+addToPrototype();
 export type NumberLocale = "us" | "eu" | "_";
 export const defaultLocale: NumberLocale = "us";
 
@@ -138,8 +141,15 @@ export function buildNumberPatterns({
 
     const sign = String.raw`[+-]?`;
 
-    const INT_PATTERN = new RegExp(`^${sign}${intPart}$`, 'd');
-    const FLOAT_PATTERN = new RegExp(`^${sign}${intPart}${decPart}$`, 'd');
+    const INT_PATTERN = new RegExp(`${sign}${intPart}`, 'd').withParsers({
+        _: (s: string) => ({raw: s, value: parseInt(s.replace(/\D/g, ''))})
+    });
+    const FLOAT_PATTERN = new RegExp(`${sign}${intPart}${decPart}`, 'd').withParsers({
+        _: (s: string) => {
+            console.log('parsing', s)
+            return ({raw: s, value: parseFloat(s.replace(thousands,'').replace(decimal, '.').replace(/[^\d\.]/g,''))})
+        }
+    });
 
     return { INT_PATTERN, FLOAT_PATTERN };
 }
@@ -160,12 +170,12 @@ export const { INT_PATTERN, FLOAT_PATTERN: FLOAT_PATTERN } =
 
 export function isInt(s: string, locale: NumberLocale = defaultLocale): boolean {
     const { INT_PATTERN } = buildNumberPatterns({locale});
-    return INT_PATTERN.test(s.trim());
+    return re`^${INT_PATTERN}$`.test(s.trim());
 }
 
 export function isFloat(s: string, locale: NumberLocale = defaultLocale): boolean {
     const { FLOAT_PATTERN } = buildNumberPatterns({locale});
-    return FLOAT_PATTERN.test(s.trim());
+    return re`^${FLOAT_PATTERN}$`.test(s.trim());
 }
 
 
