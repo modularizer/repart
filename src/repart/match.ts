@@ -692,13 +692,15 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
             // console.log("no results")
             return new Result(parsedResult, null);
         }
-        const firstKeys = Object.keys(results[0]);
+        const resultGroups = results.map(r => r.groups);
+        const firstKeys = Object.keys(resultGroups[0]);
         const n = firstKeys.length;
         let ret = results;
         if (n === 1){
+
             const k = firstKeys[0];
 
-            if (results.every(o => Object.keys(o).length === 1 && Object.keys(o)[0] ===k)){
+            if (resultGroups.every(o => Object.keys(o).length === 1 && Object.keys(o)[0] ===k)){
                 // console.log("building result for a list of objects with all the same single key")
                 ret = results.map(o => {
                     if (typeof o === 'object' && o !== null && k in o) {
@@ -709,7 +711,7 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
             }
         }
         else if (firstKeys.includes('key')){
-            if (firstKeys.includes('value') && results.every(o => {const k2 = Object.keys(o); return k2.length === 2 && k2.includes('key') && k2.includes('value')})){
+            if (firstKeys.includes('value') && resultGroups.every(o => {const k2 = Object.keys(o); return k2.length === 2 && k2.includes('key') && k2.includes('value')})){
                 const entries: [string, any][] = [];
                 for (const o of results) {
                     if (typeof o === 'object' && o !== null && 'key' in o && 'value' in o) {
@@ -718,7 +720,7 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
                 }
                 // console.log("Returning kv mapped object")
                 ret = Object.assign({}, ...entries.map(([k, v]) => ({[k]: v})));
-            }else if (results.every(o => Object.keys(o).includes('key'))){
+            }else if (resultGroups.every(o => Object.keys(o).includes('key'))){
                 const entries: [string, any][] = [];
                 for (const o of results) {
                     if (typeof o === 'object' && o !== null && 'key' in o) {
