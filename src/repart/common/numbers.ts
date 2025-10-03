@@ -1,6 +1,4 @@
-import {addToPrototype} from "../global";
-import {re} from "../re";
-addToPrototype();
+import {re} from "../core";
 export type NumberLocale = "us" | "eu" | "_";
 export const defaultLocale: NumberLocale = "us";
 

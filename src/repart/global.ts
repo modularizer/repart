@@ -3,12 +3,14 @@
  * This module extends the native RegExp prototype with additional methods
  * for flag manipulation and parser management.
  */
-import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags";
+import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags"; // good, no add to prototype deps
+import {asString, re, renameGroup} from "./core"; // good, no add to prototype deps
+import {escape} from "./special"; // good, no add to prototype deps
 import {Parsers, withParsers, matchRaw, matchAndExtract, Result, RawResult, Extracted} from "./match";
-import {group, special, replacedPattern, space} from "./generic";
-import {asString, re} from "./re";
+import {special, replacedPattern, space, as} from "./generic";
+
 import {quantifier} from "./generic/builders";
-import {escape} from "./special";
+import {GroupInfo} from "./decomposer";
 
 
 
@@ -48,26 +50,27 @@ declare global {
         /**
          * Wraps the current RegExp in a named group or special group type.
          * Creates a new RegExp that captures the current pattern as a named group.
-         * 
+         *
          * @param name - The name for the group or special group type:
          *   - **Named groups**: Any string creates `(?<name>pattern)`
-         *   - **'unnamed'**: Creates `(pattern)` - regular capturing group
-         *   - **'noncapturing'**: Creates `(?:pattern)` - non-capturing group
+         *   - **'capturing'**: Creates `(pattern)` - regular capturing group
+         *   - **'nonCapturing'**: Creates `(?:pattern)` - non-capturing group
          *   - **'lookahead'**: Creates `(?=pattern)` - positive lookahead
          *   - **'lookbehind'**: Creates `(?<=pattern)` - positive lookbehind
-         *   - **'notlookahead'**: Creates `(?!pattern)` - negative lookahead
-         *   - **'notlookbehind'**: Creates `(?<!pattern)` - negative lookbehind
+         *   - **'negativeLookahead'**: Creates `(?!pattern)` - negative lookahead
+         *   - **'negativeLookbehind'**: Creates `(?<!pattern)` - negative lookbehind
          *   - **'optional'**: Creates `(pattern)?` - optional capturing group
          * @returns A new RegExp with the current pattern wrapped in the specified group type
-         * 
+         *
          * @example
          * const pattern = /\d+/.as('number'); // (?<number>\d+)
          * const email = EMAIL_PATTERN.as('email'); // (?<email>email_pattern)
-         * const noncap = /\w+/.as('noncapturing'); // (?:\w+)
+         * const noncap = /\w+/.as('nonCapturing'); // (?:\w+)
          * const lookahead = /\d+/.as('lookahead'); // (?=\d+)
          * const optional = /\w+/.as('optional'); // (\w+)?
          */
-        as(name: string | special): RegExp;
+        as(name: string | special, wrap?: boolean): RegExp;
+        rename(name: string | special, wrap?: boolean): RegExp;
 
         /** Creates a new RegExp with specified flags removed from existing ones */
         removeFlags(flags?: RegExpFlags): RegExp;
@@ -143,11 +146,11 @@ declare global {
          * Wraps the current RegExp with prefix and suffix patterns.
          * Creates a new RegExp that matches the prefix, then the current pattern, then the suffix.
          * If only one parameter is provided, it's used for both prefix and suffix.
-         * 
+         *
          * @param before - The pattern to match before the current RegExp
          * @param after - The pattern to match after the current RegExp (optional, defaults to before)
          * @returns A new RegExp with the current pattern wrapped
-         * 
+         *
          * @example
          * const pattern = /\d+/.wrappedWith('\\s*', '\\s*'); // /\s*\d+\s* /
          * const quoted = /word/.wrappedWith('"'); // /"word"/
@@ -158,10 +161,10 @@ declare global {
         /**
          * Concatenates the current RegExp with another pattern.
          * Creates a new RegExp that matches the current pattern followed by the given pattern.
-         * 
+         *
          * @param after - The pattern to match after the current RegExp
          * @returns A new RegExp with the patterns concatenated
-         * 
+         *
          * @example
          * const pattern = /\d+/.then('\\s*'); // /\d+\s* /
          * const emailPattern = /user/.then('@').then(/domain/); // /user@domain/
@@ -172,9 +175,9 @@ declare global {
          * Makes the current RegExp optional (matches 0 or 1 times).
          * Creates a new RegExp that optionally matches the current pattern.
          * Automatically wraps in parentheses if needed for proper grouping.
-         * 
+         *
          * @returns A new RegExp that optionally matches the current pattern
-         * 
+         *
          * @example
          * const pattern = /\d+/.optional(); // /\d+?/ or /(\d+)? /
          * const emailPattern = EMAIL_PATTERN.optional(); // Email pattern is optional
@@ -185,11 +188,11 @@ declare global {
          * Makes the current RegExp repeat with specified quantifiers.
          * Creates a new RegExp that matches the current pattern a specified number of times.
          * Automatically wraps in parentheses if needed for proper grouping.
-         * 
+         *
          * @param minCount - Minimum number of repetitions (default: 0)
          * @param maxCount - Maximum number of repetitions (undefined = minCount, null = unlimited)
          * @returns A new RegExp with the specified repetition quantifier
-         * 
+         *
          * @example
          * const pattern = /\d/.repeated(1, 3); // /\d{1,3}/ or /(\d){1,3} /
          * const many = /\w/.repeated(0); // /\w* / or /(\w)* /
@@ -201,9 +204,9 @@ declare global {
          * Makes spaces in the pattern flexible by matching consecutive whitespace (excluding newlines).
          * Creates a new RegExp where space characters match any amount of consecutive whitespace.
          * Useful for patterns where spacing might vary but newlines should be preserved.
-         * 
+         *
          * @returns A new RegExp with flexible whitespace matching
-         * 
+         *
          * @example
          * const pattern = /hello world/.spaced(); // Matches "hello world", "hello  world", "hello\tworld", etc.
          * const flexible = /name: value/.spaced(); // Matches "name:value", "name: value", "name:  value", etc.
@@ -213,11 +216,11 @@ declare global {
         /**
          * Performs regex matching with the current RegExp pattern.
          * Returns an object that behaves like the extracted data but provides access to raw, parsed, and extraced.
-         * 
+         *
          * @param input - The input string to search
          * @param options - Optional matching parameters
          * @returns Object that acts like extracted data with .raw, .parsed, and .extracted properties
-         * 
+         *
          * @example
          * const result = /name: (?<name>\w+)/.match("name: John");
          * console.log(result.name); // "John" (extracted data)
@@ -230,11 +233,11 @@ declare global {
         /**
          * Performs raw regex matching with the current RegExp pattern.
          * Returns a MatchRawResult with detailed position and group information.
-         * 
+         *
          * @param input - The input string to search
          * @param options - Optional matching parameters
          * @returns MatchRawResult with .result getter for accessing all data
-         * 
+         *
          * @example
          * const rawResult = /name: (?<name>\w+)/.matchRaw("name: John");
          * const result = rawResult.result; // Access the proxy object
@@ -244,16 +247,47 @@ declare global {
         /**
          * Performs regex matching and extracts structured data in one step.
          * Returns the extracted data directly without the proxy wrapper.
-         * 
+         *
          * @param input - The input string to search
          * @param options - Optional matching parameters
          * @returns Extracted data in various structured formats
-         * 
+         *
          * @example
          * const data = /name: (?<name>\w+)/.matchAndExtract("name: John");
          * console.log(data.name); // "John"
          */
         matchAndExtract(input: string, options?: {maxMatches?: number | null, offset?: number, flags?: RegExpFlags, lastIndex?: number, name?: string, cacheInput?: boolean}): Extracted;
+
+        /**
+         * Returns detailed information about the RegExp pattern's group structure.
+         * Provides comprehensive analysis of capturing groups, named groups, quantifiers,
+         * nesting levels, and pattern composition for debugging and introspection.
+         *
+         * @returns GroupInfo object containing:
+         *   - Group structure analysis (capturing, named, non-capturing groups)
+         *   - Quantifier information (min/max counts, repetition patterns)
+         *   - Nesting levels and parent-child relationships
+         *   - Pattern source breakdown and indices
+         *   - Access to individual group details and named group proxies
+         *
+         * @example
+         * const pattern = /(?<name>\w+): (?<value>\d+)(?:\.(?<decimal>\d+))?/;
+         * const info = pattern.info;
+         * console.log(info.groupNames); // ["name", "value", "decimal"]
+         * console.log(info.namedGroups.name.source); // "\w+"
+         * console.log(info.hasQuantifier); // true
+         * console.log(info.toString()); // Colored pattern visualization
+         *
+         * @example
+         * // Analyze complex nested patterns
+         * const complex = /(?<outer>(?<inner>\w+)\s*:\s*(?<value>\d+))+/;
+         * const info = complex.info;
+         * console.log(info.level); // 0 (top level)
+         * console.log(info.namedGroups.outer.level); // 0
+         * console.log(info.namedGroups.inner.level); // 1
+         * console.log(info.namedGroups.value.level); // 1
+         */
+        readonly info: GroupInfo;
     }
 }
 
@@ -266,10 +300,10 @@ declare global {
  * - Pattern composition (wrappedWith, then)
  * - Quantifier application (optional, repeated)
  * - Flexible whitespace matching (spaced)
- * 
+ *
  * The methods are added as non-enumerable, configurable properties to avoid
  * interfering with normal RegExp iteration and serialization.
- * 
+ *
  * @example
  * addToPrototype();
  * const regex = /hello/i;
@@ -306,8 +340,12 @@ export function addToPrototype() {
      * Implementation of the 'as' method - wraps RegExp in a named group.
      * Uses the group function to create a named capture group around the current pattern.
      */
-    def('as', function (this: RegExp, name: string | special) {
-        return group(name)`${this}`;
+    def('as', function (this: RegExp, name: string | special, wrap: boolean = false) {
+        return as(this, name, wrap);
+    });
+
+    def('rename', function (this: RegExp, name: string | special, wrap: boolean = false) {
+        return renameGroup(this, name, wrap);
     });
 
     /**
@@ -395,5 +433,17 @@ export function addToPrototype() {
      */
     def('matchAndExtract', function (this: RegExp, input: string, options: any = {}) {
         return matchAndExtract(input, this, options);
+    });
+
+    /**
+     * Implementation of the 'info' getter - returns GroupInfo object for pattern analysis.
+     * Provides comprehensive information about the RegExp's group structure, quantifiers,
+     * nesting levels, and pattern composition for debugging and introspection.
+     */
+    Object.defineProperty(RegExp.prototype, 'info', {
+        get: function (this: RegExp) {
+            return new GroupInfo(this);
+        },
+        configurable: true
     });
 }

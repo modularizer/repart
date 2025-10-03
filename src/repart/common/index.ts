@@ -1,3 +1,6 @@
+import {initialized} from "../init";
+const x = initialized;
+
 export {
     htmlComment,
     pyBlockComment, pyComment,

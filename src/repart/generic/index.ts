@@ -1,11 +1,11 @@
 export {anyOf, noneOf, wordList} from './builders';
 export {
-    unnamed, u,
+    capturing, c,
     optional, o,
-    noncapturing, nc,
-    lookahead, notlookahead,
-    lookbehind, notlookbehind,
-    group, g, special
+    nonCapturing, nc,
+    lookahead, negativeLookahead,
+    lookbehind, negativeLookbehind,
+    special, as
 } from './groups';
 export {
     newLine, endLine, startLine,

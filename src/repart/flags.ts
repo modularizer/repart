@@ -1,4 +1,5 @@
-import {asString} from "./re";
+import {_simpleWithParsers, asString} from "./core";
+
 
 /**
  * Removes duplicate characters from a string, keeping only the first occurrence of each character.
@@ -83,9 +84,12 @@ export function regexpFlags(flags: RegExpFlags | undefined): string {
  * withFlags(/abc/i, 'g') // /abc/g
  * withFlags('hello', 'i') // /hello/i
  */
-export function withFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
+export function withFlags(rx: string | RegExp, flags?: RegExpFlags) {
     const oldFlags = (rx instanceof RegExp)?rx.flags:"";
-    return (new RegExp(asString(rx), regexpFlags(flags ?? oldFlags))).withParsers((rx instanceof RegExp)?rx.parsers:{});
+    const src = (rx instanceof RegExp)?rx.source:rx;
+    //@ts-ignore
+    const p = (rx instanceof RegExp)?rx.parsers:{};
+    return _simpleWithParsers(new RegExp(src, regexpFlags(flags ?? oldFlags)), p);
 }
 
 /**
@@ -104,7 +108,9 @@ export function addFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
     const oldFlags = (rx instanceof RegExp)?rx.flags:"";
     const newFlags = regexpFlags(flags ?? '');
     const reflags = dedup(oldFlags + newFlags);
-    return (new RegExp(asString(rx), reflags)).withParsers((rx instanceof RegExp)?rx.parsers:{});
+    //@ts-ignore
+    const p = (rx instanceof RegExp)?rx.parsers:{};
+    return _simpleWithParsers(new RegExp(asString(rx), reflags), p);
 }
 
 /**
@@ -125,8 +131,10 @@ export function removeFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
             throw new Error("cannot remove 'd' flag needed for indexing")
         }
         const removedFlags = regexpFlags(flags);
-        const newFlags = dedup(Array.from(rx.flags ?? '').filter(v => !removedFlags.includes(v as RegExpFlag)).join("") + "d")
-        return (new RegExp(rx.source, newFlags)).withParsers((rx instanceof RegExp)?rx.parsers:{});
+        const newFlags = dedup(Array.from(rx.flags ?? '').filter(v => !removedFlags.includes(v as RegExpFlag)).join("") + "d");
+        //@ts-ignore
+        const p = (rx instanceof RegExp)?rx.parsers:{};
+        return _simpleWithParsers(new RegExp(rx.source, newFlags), p);
     }else{
         return new RegExp('' + rx, "d")
     }

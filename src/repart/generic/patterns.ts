@@ -1,4 +1,4 @@
-import {re} from "../re";
+import {re} from "../core";
 
 export const newLine = re`\r?\n`;
 export const endLine = re`(?=\r?\n|$)`;

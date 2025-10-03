@@ -2,7 +2,7 @@
  * Template functions for building common RegExp patterns with specific flags.
  * These functions provide convenient shortcuts for common regex operations.
  */
-import {re, stack} from "../re";
+import {re, stack} from "../core";
 import {any, anything, endLine, space, startLine} from "./patterns";
 
 

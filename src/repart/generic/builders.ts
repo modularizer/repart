@@ -1,5 +1,5 @@
 import {escape} from "../special";
-import {re} from "../re";
+import {re} from "../core";
 
 export function anyOf(...parts: (RegExp | string)[]) {
     let parsers = {};

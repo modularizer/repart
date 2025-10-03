@@ -1,4 +1,4 @@
-import {re} from "../re";
+import {re} from "../core";
 import {startLine} from "../generic";
 
 export const AZ = re`[A-Z]`;

@@ -1,4 +1,4 @@
-import {asString, re} from "../re";
+import {asString, re} from "../core";
 import {dedup} from "../flags";
 import {space} from "./patterns";
 

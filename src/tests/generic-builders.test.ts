@@ -7,10 +7,10 @@ import {
   u,
   optional,
   o,
-  noncapturing,
+  nonCapturing,
   nc,
   lookahead,
-  notlookahead,
+  negativeLookahead,
   lookbehind,
   notlookbehind,
   group,
@@ -171,9 +171,9 @@ describe('Generic Builders', () => {
       });
     });
 
-    describe('noncapturing / nc', () => {
+    describe('nonCapturing / nc', () => {
       test('should create non-capturing groups', () => {
-        const pattern = noncapturing`hello`;
+        const pattern = nonCapturing`hello`;
         expect(pattern.source).toBe('(?:hello)');
       });
 
@@ -183,7 +183,7 @@ describe('Generic Builders', () => {
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${noncapturing`hello`}`;
+        const pattern = re`prefix: ${nonCapturing`hello`}`;
         expect(pattern.source).toContain('(?:hello)');
       });
     });
@@ -200,14 +200,14 @@ describe('Generic Builders', () => {
       });
     });
 
-    describe('notlookahead', () => {
+    describe('negativeLookahead', () => {
       test('should create negative lookahead', () => {
-        const pattern = notlookahead`hello`;
+        const pattern = negativeLookahead`hello`;
         expect(pattern.source).toBe('(?!hello)');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix${notlookahead`hello`}`;
+        const pattern = re`prefix${negativeLookahead`hello`}`;
         expect(pattern.source).toContain('(?!hello)');
       });
     });
@@ -258,15 +258,15 @@ describe('Generic Builders', () => {
         const optionalPattern = special('optional')`hello`;
         expect(optionalPattern.source).toBe('(hello)?');
 
-        const noncapturingPattern = special('noncapturing')`hello`;
-        expect(noncapturingPattern.source).toBe('(?:hello)');
+        const nonCapturingPattern = special('nonCapturing')`hello`;
+        expect(nonCapturingPattern.source).toBe('(?:hello)');
 
         const lookaheadPattern = special('lookahead')`hello`;
         expect(lookaheadPattern.source).toBe('(?=hello)');
       });
 
       test('should work with all special types', () => {
-        const types = ['unnamed', 'optional', 'noncapturing', 'lookahead', 'notlookahead', 'lookbehind', 'notlookbehind'];
+        const types = ['unnamed', 'optional', 'nonCapturing', 'lookahead', 'negativeLookahead', 'lookbehind', 'notlookbehind'];
         
         types.forEach(type => {
           const pattern = special(type)`test`;

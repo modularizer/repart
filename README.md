@@ -249,10 +249,10 @@ Wrap pattern in named group or special group type.
 
 **Special Group Types:**
 - `'unnamed'` - Regular capturing group `(pattern)` - **Not accessible via RePart methods**
-- `'noncapturing'` - Non-capturing group `(?:pattern)` - **Not accessible via RePart methods**
+- `'nonCapturing'` - Non-capturing group `(?:pattern)` - **Not accessible via RePart methods**
 - `'lookahead'` - Positive lookahead `(?=pattern)` - **Not accessible via RePart methods**
 - `'lookbehind'` - Positive lookbehind `(?<=pattern)` - **Not accessible via RePart methods**
-- `'notlookahead'` - Negative lookahead `(?!pattern)` - **Not accessible via RePart methods**
+- `'negativeLookahead'` - Negative lookahead `(?!pattern)` - **Not accessible via RePart methods**
 - `'notlookbehind'` - Negative lookbehind `(?<!pattern)` - **Not accessible via RePart methods**
 - `'optional'` - Optional capturing group `(pattern)?` - **Not accessible via RePart methods**
 
@@ -262,7 +262,7 @@ const pattern = /\d+/.as('number'); // (?<number>\d+)
 const email = EMAIL_PATTERN.as('email'); // (?<email>email_pattern)
 
 // Special group types
-const noncap = /\w+/.as('noncapturing'); // (?:\w+)
+const noncap = /\w+/.as('nonCapturing'); // (?:\w+)
 const lookahead = /\d+/.as('lookahead'); // (?=\d+)
 const optional = /\w+/.as('optional'); // (\w+)?
 const lookbehind = /\d+/.as('lookbehind'); // (?<=\d+)
@@ -649,10 +649,10 @@ console.log(noMatch); // null
 | `group` / `g` | Create named or special groups | `group('name')`\`hello\` → `/(?<name>hello)/` |
 | `unnamed` / `u` | Regular capturing group | `unnamed`\`hello\` → `/(hello)/` |
 | `optional` / `o` | Optional group | `optional`\`hello\` → `/(hello)?/` |
-| `noncapturing` / `nc` | Non-capturing group | `noncapturing`\`hello\` → `/(?:hello)/` |
+| `nonCapturing` / `nc` | Non-capturing group | `nonCapturing`\`hello\` → `/(?:hello)/` |
 | `lookahead` | Positive lookahead | `lookahead`\`hello\` → `/(?=hello)/` |
 | `lookbehind` | Positive lookbehind | `lookbehind`\`hello\` → `/(?<=hello)/` |
-| `notlookahead` | Negative lookahead | `notlookahead`\`hello\` → `/(?!hello)/` |
+| `negativeLookahead` | Negative lookahead | `negativeLookahead`\`hello\` → `/(?!hello)/` |
 | `notlookbehind` | Negative lookbehind | `notlookbehind`\`hello\` → `/(?<!hello)/` |
 
 ### Pattern Constants (Basic)

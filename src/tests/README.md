@@ -37,7 +37,7 @@ The test suite is organized into the following categories:
 
 ### Generic Builders (`generic-builders.test.ts`)
 - `anyOf`, `noneOf`, `wordList`
-- Group builders (`unnamed`, `optional`, `noncapturing`, `lookahead`, etc.)
+- Group builders (`unnamed`, `optional`, `nonCapturing`, `lookahead`, etc.)
 - Special group types
 - Complex combinations
 

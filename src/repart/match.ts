@@ -25,7 +25,9 @@
  *       .extracted: Extracted (bare)
  */
 import {RegExpFlags} from "./flags";
-import {re} from "./re";
+import {re} from "./core";
+import {getAllGroupNames} from "./grouping";
+
 
 /**
  * Raw group value structure containing match information and metadata.
@@ -352,6 +354,24 @@ export const defaultStringParser = tryjson;
  * @returns The RegExp with parsers attached
  */
 function setParsers(rx: RegExp, v: Parsers) {
+    const groupNames = getAllGroupNames(rx);
+    for (let k2 of Object.keys(v)){
+        if (!['groups', '_'].includes(k2)){
+            k2 = k2.replace(/^_/, '');
+            if (!groupNames.includes(k2)){
+                throw new Error(`invalid parser name. no group found named ${k2}`)
+            }
+        }
+    }
+    if (v['_']){
+        const f = v['_'];
+        delete v['_'];
+        for (let gn of groupNames){
+            if (v[gn] === undefined){
+                v[gn] = f;
+            }
+        }
+    }
     Object.defineProperty(rx, 'parsers', {
         value: v, writable: true, configurable: true, enumerable: false
     });
@@ -388,6 +408,7 @@ function setParsers(rx: RegExp, v: Parsers) {
 export function withParsers(rx: RegExp, parsers: Parsers = {}){
     if (rx && parsers){
         setParsers(rx, {
+            // @ts-ignore
             ...(rx.parsers ?? {}),
             ...(parsers ?? {}),
         })
@@ -629,6 +650,7 @@ export class Result {
     }
 
     get groups(): Record<string, GroupValue> {
+        //@ts-ignore
         return (this.parsed?.groups ?? {}) as Record<string, GroupValue>;
     }
 
@@ -659,6 +681,7 @@ export class Result {
     }
 }
 
+const sep = '____';
 
 
 
@@ -751,11 +774,41 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
             // console.log("extracting group ", k3)
             extract(new ParsedResult(v3), k3, o);
         }
-        // console.log("o", o);
-        const groupsParser = (v.pattern.parsers ?? {}).groups;
+
+
+        const countBlanks = (s: string) => (s.match(re`${sep}`.withFlags('g')) || []).length;
+        const allParsers = (v.pattern.parsers ?? {});
+        const groupParsers = Object.keys(allParsers)
+            .filter(k => k.endsWith(`${sep}groups`))
+            .sort((a, b) =>
+            countBlanks(a) - countBlanks(b) || b.length - a.length
+        );
+        // console.log("found group parsers", groupParsers)
+        //@ts-ignore
+        const groupsParser = allParsers.groups;
         if(groupsParser){
             o = groupsParser(o);
         }
+        let okeys = Object.keys(o)
+        for (let gk of groupParsers){
+            okeys = Object.keys(o)
+            const n = gk.replace(re`${sep}groups$`, '')
+            const pre = n + sep;
+            const outOfGroup = Object.fromEntries(okeys.filter(k2 => !k2.startsWith(pre) && k2 !== n).map(k2 => [k2, o[k2]]));
+            const inGroup = Object.fromEntries(okeys.filter(k2 => k2.startsWith(pre) || k2 === n).map(k2 => [k2.replace(re`^${pre}`, ''), o[k2]]));
+            console.log(gk, pre, inGroup)
+            // console.log("ingroup", inGroup, k, groupParsers)
+            if (Object.keys(inGroup).length > 0) {
+                const r = allParsers[gk](inGroup);
+                o = {
+                    ...outOfGroup,
+                    [n]: r
+                }
+            }
+        }
+        okeys = Object.keys(o);
+        o = Object.fromEntries(okeys.map(k2 => [k2.split(sep).filter(v => v).pop(), o[k2]]));
+
         if (k && !v.unnest && !flat){
             d[k] = o
         }else {
@@ -771,6 +824,7 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
         // console.log("no name and no groups, returning parsed")
         return new Result(parsedResult, v.parsed);
     }
+    d = Object.fromEntries(Object.keys(d).map(k2 => [k2.split(sep).filter(v => v).pop(), d[k2]]));
     // console.log("returning record")
     // console.log("v.groups", v.groups)
     return new Result(parsedResult, d);

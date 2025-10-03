@@ -1,4 +1,4 @@
-import {re} from "../re";
+import {re} from "../core";
 
 // RFC 5322 compliant email pattern with proper validation
 // Local part: alphanumeric, dots, underscores, hyphens, plus signs

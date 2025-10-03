@@ -1,5 +1,5 @@
 /* match a block comment between triple backticks */
-import {re} from "../re";
+import {re} from "../core";
 import {p} from "./templates";
 
 function wrapped(group: string, groupname: string = 'wrapper'){

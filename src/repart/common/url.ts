@@ -1,4 +1,4 @@
-import {re} from "../re";
+import {re} from "../core";
 
 
 

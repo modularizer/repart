@@ -60,8 +60,8 @@ describe('Core Features', () => {
     });
 
     test('should create special group types', () => {
-      const noncapturing = /\w+/.as('noncapturing');
-      expect(noncapturing.source).toBe('(?:\\w+)');
+      const nonCapturing = /\w+/.as('nonCapturing');
+      expect(nonCapturing.source).toBe('(?:\\w+)');
 
       const optional = /\d+/.as('optional');
       expect(optional.source).toBe('(\\d+)?');
