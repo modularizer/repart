@@ -1,4 +1,4 @@
-export {anyOf, noneOf, wordList} from './builders';
+export {anyOf, noneOf, wordList, anywordbut} from './builders';
 export {
     capturing, c,
     optional, o,

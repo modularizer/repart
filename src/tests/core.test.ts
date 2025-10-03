@@ -1,7 +1,7 @@
 import { re, r, match, matchAndExtract } from '../repart';
 import { matchRaw, withParsers } from '../repart/match';
 import { word, num } from '../repart/generic';
-import { EMAIL_PATTERN } from '../repart/common';
+import {EMAIL_PATTERN, FLOAT_PATTERN} from '../repart/common';
 
 describe('Core Features', () => {
   describe('re template function', () => {
@@ -13,7 +13,7 @@ describe('Core Features', () => {
 
     test('should build patterns with number interpolation', () => {
       const count = 3;
-      const pattern = re`\\d{${count}}`;
+      const pattern = re`\d{${count}}`;
       expect(pattern.source).toBe('\\d{3}');
     });
 
@@ -34,7 +34,7 @@ describe('Core Features', () => {
     });
 
     test('should preserve parsers from child patterns', () => {
-      const childPattern = /\d+/.withParsers({ number: parseInt });
+      const childPattern = /\d+/.as("number").withParsers({ number: parseInt });
       const pattern = re`count: ${childPattern}`;
       expect((pattern as any).parsers).toHaveProperty('number');
     });
@@ -60,16 +60,16 @@ describe('Core Features', () => {
     });
 
     test('should create special group types', () => {
-      const nonCapturing = /\w+/.as('nonCapturing');
+      const nonCapturing = /\w+/.as('non-capturing');
       expect(nonCapturing.source).toBe('(?:\\w+)');
 
       const optional = /\d+/.as('optional');
       expect(optional.source).toBe('(\\d+)?');
 
-      const lookahead = /\d+/.as('lookahead');
+      const lookahead = /\d+/.as('positive-lookahead');
       expect(lookahead.source).toBe('(?=\\d+)');
 
-      const lookbehind = /\d+/.as('lookbehind');
+      const lookbehind = /\d+/.as('positive-lookbehind');
       expect(lookbehind.source).toBe('(?<=\\d+)');
     });
 
@@ -139,10 +139,20 @@ describe('Core Features', () => {
 
     test('should handle cascading parsing with RegExp', () => {
       const nestedPattern = re`name: ${word.as('name')}, age: ${num.as('age')}`;
-      const pattern = re`user: ${word.as('userData')}`.withParsers({
+      const pattern = re`user: ${/.*/.as('userData')}`.withParsers({
         userData: nestedPattern
       });
       
+      const result = pattern.match('user: name: john, age: 25');
+      expect(result.userData.name).toBe('john');
+      expect(result.userData.age).toBe('25');
+    });
+    test('should handle unnested cascading parsing with RegExp', () => {
+      const nestedPattern = re`name: ${word.as('name')}, age: ${num.as('age')}`;
+      const pattern = re`user: ${/.*/.as('userData')}`.withParsers({
+        _userData: nestedPattern
+      });
+
       const result = pattern.match('user: name: john, age: 25');
       expect(result.name).toBe('john');
       expect(result.age).toBe('25');
@@ -165,16 +175,16 @@ describe('Core Features', () => {
       const pattern = re`${word.as('word')}`.withFlags('g');
       const result = pattern.match('hello world test');
       
-      expect(Array.isArray(result)).toBe(true);
+      expect(Array.isArray(result.extracted)).toBe(true);
       expect(result.length).toBe(3);
-      expect(result[0].word).toBe('hello');
-      expect(result[1].word).toBe('world');
-      expect(result[2].word).toBe('test');
+      expect(result[0]).toBe('hello');
+      expect(result[1]).toBe('world');
+      expect(result[2]).toBe('test');
     });
 
     test('should return null for no match', () => {
       const pattern = re`name: ${word.as('name')}`;
-      const result = pattern.match('no match here');
+      const result = pattern.matchAndExtract('no match here');
       
       expect(result).toBeNull();
     });
@@ -194,11 +204,12 @@ describe('Core Features', () => {
   describe('.matchRaw() method', () => {
     test('should return RawResult with detailed information', () => {
       const pattern = re`name: ${word.as('name')}, age: ${num.as('age')}`;
-      const result = pattern.matchRaw('name: John, age: 25');
+      const input = 'name: John, age: 25';
+      const result = pattern.matchRaw(input);
       
       expect(result.startIndex).toBe(0);
-      expect(result.endIndex).toBe(20);
-      expect(result.raw).toBe('name: John, age: 25');
+      expect(result.endIndex).toBe(input.length);
+      expect(result.raw.raw).toBe('name: John, age: 25');
       expect(result.groups.name.raw).toBe('John');
       expect(result.groups.age.raw).toBe('25');
     });
@@ -214,7 +225,7 @@ describe('Core Features', () => {
 
     test('should handle multiple matches', () => {
       const pattern = re`${word.as('word')}`.withFlags('g');
-      const result = pattern.matchRaw('hello world');
+      const result = pattern.matchRaw('hello world').raw;
       
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(2);
@@ -279,14 +290,14 @@ describe('Core Features', () => {
         age: parseInt
       });
       
-      const pattern = re`users: ${word.as('users')}`.withParsers({
-        _users: userPattern.withFlags('g')
+      const pattern = re`users: ${/[\s\S]*/.as('users')}`.withParsers({
+        users: userPattern.withFlags('g')
       });
       
       const result = pattern.match(`
         users: name: john, age: 25
         name: jane, age: 30
-      `);
+      `).extracted.users;
       
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(2);
@@ -297,7 +308,7 @@ describe('Core Features', () => {
     });
 
     test('should handle multiple transformation types', () => {
-      const pattern = re`id: ${num.as('id')}, name: ${word.as('name')}, score: ${num.as('score')}`.withParsers({
+      const pattern = re`id: ${num.as('id')}, name: ${word.as('name')}, score: ${FLOAT_PATTERN.as('score')}`.withParsers({
         id: parseInt,
         name: (s: string) => s.toLowerCase(),
         score: parseFloat,
@@ -311,7 +322,7 @@ describe('Core Features', () => {
       
       expect(result.player.id).toBe(123);
       expect(result.player.name).toBe('john');
-      expect(result.points).toBe(95.5);
+      expect(result.points.value).toBe(95.5);
     });
   });
 });

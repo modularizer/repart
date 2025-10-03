@@ -188,15 +188,15 @@ describe('Common Patterns', () => {
         testNumbers.forEach(num => {
           const result = matchAndExtract(num, INT_PATTERN_US);
           expect(result).not.toBeNull();
-          expect(result.raw).toBe(num);
-          expect(result.value).toBe(parseInt(num.replace(/\D/g,'')));
+          expect(result.int.raw).toBe(num);
+          expect(result.int.value).toBe(parseInt(num.replace(/\D/g,'')));
         });
       });
 
       test('should extract integer value', () => {
         const result = matchAndExtract('1,234', INT_PATTERN_US);
-        expect(result.raw).toBe('1,234');
-        expect(result.value).toBe(1234);
+        expect(result.int.raw).toBe('1,234');
+        expect(result.int.value).toBe(1234);
       });
     });
 
@@ -213,8 +213,8 @@ describe('Common Patterns', () => {
         testNumbers.forEach(num => {
           const result = matchAndExtract(num, INT_PATTERN_EU);
           expect(result).not.toBeNull();
-          expect(result.raw).toBe(num);
-          expect(result.value).toBe(parseInt(num.replace(/\D/g,'')));
+          expect(result.int.raw).toBe(num);
+          expect(result.int.value).toBe(parseInt(num.replace(/\D/g,'')));
         });
       });
     });
@@ -232,8 +232,8 @@ describe('Common Patterns', () => {
         testNumbers.forEach(num => {
           const result = matchAndExtract(num, INT_PATTERN_UNDERSCORE);
           expect(result).not.toBeNull();
-          expect(result.raw).toBe(num);
-          expect(result.value).toBe(parseInt(num.replace(/\D/g,'')));
+          expect(result.int.raw).toBe(num);
+          expect(result.int.value).toBe(parseInt(num.replace(/\D/g,'')));
         });
       });
     });
@@ -252,15 +252,15 @@ describe('Common Patterns', () => {
           const result = matchAndExtract(num, FLOAT_PATTERN_US);
           // throw new Error(`${typeof  result.raw}, ${typeof  result.value}, ${typeof num}`)
           expect(result).not.toBeNull();
-          expect(result.raw).toBe(num);
-          expect(result.value).toBe(parseFloat(num.replace(/[^\d\.]/g,'')));
+          expect(result.float.raw).toBe(num);
+          expect(result.float.value).toBe(parseFloat(num.replace(/[^\d\.]/g,'')));
         });
       });
 
       test('should extract float components', () => {
         const result = matchAndExtract('1,234.56', FLOAT_PATTERN_US);
-        expect(result.raw).toBe("1,234.56");
-        expect(result.value).toBe(1234.56);
+        expect(result.float.raw).toBe("1,234.56");
+        expect(result.float.value).toBe(1234.56);
       });
     });
 
@@ -277,16 +277,16 @@ describe('Common Patterns', () => {
         testNumbers.forEach(num => {
           const result = matchAndExtract(num, FLOAT_PATTERN_EU);
           expect(result).not.toBeNull();
-          expect(result.raw).toBe(num);
-          expect(result.value).toBe(parseFloat(num.replace('.','').replace(',','.')));
+          expect(result.float.raw).toBe(num);
+          expect(result.float.value).toBe(parseFloat(num.replace('.','').replace(',','.')));
         });
       });
 
       test('should extract float components', () => {
         const result = matchAndExtract('1.234,56', FLOAT_PATTERN_EU);
         // expect(result).toBe({ raw: '1.234,56', value: 1234.56 });
-        expect(result.raw).toBe('1.234,56');
-        expect(result.value).toBe(1234.56);
+        expect(result.float.raw).toBe('1.234,56');
+        expect(result.float.value).toBe(1234.56);
       });
     });
   });
@@ -299,7 +299,7 @@ describe('Common Patterns', () => {
         testCodes.forEach(code => {
           const result = matchAndExtract(code, STATE_CODE_PATTERN);
           expect(result).not.toBeNull();
-          expect(result.stateCode).toBe(code);
+          expect(result.state.stateCode).toBe(code);
         });
       });
 
@@ -328,7 +328,7 @@ describe('Common Patterns', () => {
         testNames.forEach(name => {
           const result = matchAndExtract(name, STATE_NAME_PATTERN);
           expect(result).not.toBeNull();
-          expect(result.stateName).toBe(name);
+          expect(result.state.stateName).toBe(name);
         });
       });
     });
@@ -347,7 +347,7 @@ describe('Common Patterns', () => {
         testStates.forEach(state => {
           const result = matchAndExtract(state, STATE_PATTERN);
           expect(result).not.toBeNull();
-          expect(result.state).toBe(state);
+          expect(result.state.state).toBe(state);
         });
       });
     });
@@ -444,15 +444,15 @@ describe('Common Patterns', () => {
       test('should match state codes', () => {
         const result = matchAnyState('CA');
         expect(result).toBeDefined();
-        expect(result.stateCode).toBe('CA');
-        expect(result.stateName).toBe('California');
+        expect(result.state.stateCode).toBe('CA');
+        expect(result.state.stateName).toBe('California');
       });
 
       test('should match state names', () => {
         const result = matchAnyState('California');
         expect(result).toBeDefined();
-        expect(result.stateCode).toBe('CA');
-        expect(result.stateName).toBe('California');
+        expect(result.state.stateCode).toBe('CA');
+        expect(result.state.stateName).toBe('California');
       });
 
 
@@ -487,7 +487,7 @@ describe('Common Patterns', () => {
       const pattern = re`State: ${STATE_PATTERN}`;
       const result = matchAndExtract('State: CA', pattern);
       
-      expect(result.state).toBe('CA');
+      expect(result.state.state).toBe('CA');
     });
 
     test('should work with number patterns in templates', () => {
@@ -516,7 +516,7 @@ State: CA`, pattern);
       expect(result.name).toBe('JOHN');
       expect(result.email).toBe('john@example.com');
       expect(result.phone.phone).toBe('+1-555-123-4567');
-      expect(result.state).toBe('CA');
+      expect(result.state.state).toBe('CA');
     });
 
     test('should parse financial data', () => {

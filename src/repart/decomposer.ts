@@ -52,6 +52,7 @@ export function getGroups(rx: string | RegExp): GroupDetails[] {
     const s = asString(rx);
     const p = groupstartorend.withFlags('g');
     const r = p.matchRaw(s);
+    if (!r.raw) return [];
     interface OpenGroup {
         sInd: number;
         cInd: number;
@@ -200,6 +201,7 @@ export class GroupInfo {
 
 
     toString(): string {
+
         const C = {
             reset: '\x1b[0m',
             red: '\x1b[31m',
@@ -215,6 +217,7 @@ export class GroupInfo {
             gray: '\x1b[90m',
             orange: '\x1b[38;2;255;165;0m',
         };
+        if (!this._hasGroups) return `${C.reset}${C.red}/${C.reset}${this.source}${C.red}/${this.flags}${C.reset}`
         // make a colored version showing specificaly named groups and quantifiers.
         // always show quantifiers in gray and group starts and ends in gray
         // always show names in bold black
@@ -242,15 +245,27 @@ export class GroupInfo {
         const src = this._source;
         let s = '';
         let level = -1;
-        let i = 0;
+        let i = undefined;
         let color = C.reset;
         const openGroups = [];
         const groupsRemaining = [...this._allGroups]
         let nextGroupStart = groupsRemaining[0]?.sInd;
         let nextGroupEnd = openGroups[openGroups.length - 1]?.qInd;
-        while (i < src.length){
-            const nxt = Math.min(nextGroupStart ?? s.length, nextGroupEnd??s.length);
-            s += src.slice(i, nxt);
+        let lastInd = -1;
+        let x = 0;
+
+        while (i === undefined || i < src.length){
+            const nxt = Math.min(nextGroupStart ?? src.length, nextGroupEnd??src.length);
+            if (i == lastInd && nxt <= i){
+                x += 1;
+                if (x > 2){
+                    throw new Error("got stuck at: " + i)
+                }
+            }else{
+                x = 0
+            }
+            lastInd = i ?? 0;
+            s += src.slice(i ?? 0, nxt);
             i = nxt;
             if (i === src.length){
                 break
@@ -267,17 +282,24 @@ export class GroupInfo {
                     if (g.type === 'named'){
                         s += `(?<${C.bold}${g.name}${C.normal}>`;
                         i = g.cInd;
+                    }else{
+                        s += src.slice(g.sInd, g.cInd);
+                        i = g.cInd;
                     }
+                }else{
+                    throw new Error("found group start but no group. this should not happen")
                 }
             }else if (i === nextGroupEnd){
                 openGroups.pop();
                 const lastOpen = openGroups[openGroups.length - 1];
                 if ((lastOpen?.level  ?? -1)!== level){
-                    level = lastOpen.level;
-                    color = lastOpen.color ?? C.reset;
+                    level = lastOpen?.level  ?? -1;
+                    color = lastOpen?.color ?? C.reset;
                     s += color;
                 }
 
+            }else{
+                throw new Error("not at start or end of a group")
             }
             nextGroupStart = groupsRemaining[0]?.sInd;
             nextGroupEnd = openGroups[openGroups.length - 1]?.qInd;

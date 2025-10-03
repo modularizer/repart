@@ -1,7 +1,9 @@
 import {re} from "../core";
 
 const tel = /(tel:)?/
-const POSSIBLE_PHONE_NUMBER_LOOKAHEAD = /^(?=(\d[\(\)\s\-\.]*){7,15})$/;
+
+const noop = (s: string) => s;
+
 
 
 const countryCode = re`\+?`.then(re`\d{1,3}`.as('countryCode').optional());
@@ -10,63 +12,31 @@ const globaltelephonePrefix = re`\d{2,}(?=\D)`.as('telephonePrefix');
 const globallineNumber = re`\d{2,}`.as('lineNumber');
 const globalsubscriber = re`(?=(\d[\(\)\s\-\.]*){4,10})\s*[\.\-\(]?\s*${globaltelephonePrefix}\s*[\.\-\)]?\s*${globallineNumber}`.as('subscriber');
 export const baseGlobalPhoneNumber = re`${countryCode}\s*[\.\-\(]?\s*${globalAreaCode}\s*[\.\-\)]?\s*${globalsubscriber}`;
-
-
-// const handler = (data) => {
-//     const groupnames = ['subscriber','phone','fullextenstionstring', 'telephonePrefix', 'lineNumber', 'areaCode', 'countryCode', 'extension']
-//     const entries = Object.entries(data).map(([k, v]) => {
-//         if (k.includes('_')){
-//             const parts = k.split('_');
-//             const g =parts.pop().trim();
-//             if (groupnames.includes(g)) {
-//                 return [g, v, true]
-//             }
-//         }else if (groupnames.includes(k)) {
-//             return [k, v, true]
-//         }
-//         return [k, v, false]
-//     });
-//     console.log(data);
-//     const phoneEntries = entries.filter(v => v[2]);
-//     const unrelatedEntries = entries.filter(v => !v[2]);
-//     const g = Object.fromEntries(phoneEntries);
-//     const unrelatedGroups = Object.fromEntries(unrelatedEntries);
-//     return {
-//         phone: new PhoneNumber(g),
-//         ...unrelatedGroups
-//     }
-// }
-const noop = (s: string) => s;
-const handler = {
-    _: noop,
-    groups: (g: any) => new PhoneNumber(g)
-}
-// const handler = {}
-
 const ext = re`(?<fullextensionstring>(?:\s*(?:,|;)?\s*(?:ext(?:ension)?|extn|x\.?|#|-)\s*[:\.]?\s*(?<extension>\d{1,6})))?`;
 
-const telephonePrefix = re`\d*`.as('telephonePrefix');
-const lineNumber = re`\d+`.as('lineNumber');
+const _GLOBAL_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseGlobalPhoneNumber}${ext}`.as('phone')
+export const GLOBAL_PHONE_NUMBER_PATTERN = _GLOBAL_PHONE_NUMBER_PATTERN.withParsers({
+    '*': noop,
+    groups: (g: any) => new PhoneNumber(g, _GLOBAL_PHONE_NUMBER_PATTERN)
+}).template('global_phone');
+
+
+
+const telephonePrefix = re`\d{3}`.as('telephonePrefix');
+const lineNumber = re`\d{4}`.as('lineNumber');
 const ussubscriber = re`(?<subscriber>${telephonePrefix}\s*[\.\-]?\s*${lineNumber})`;
 const uscountryCode = re`\+?`.then(re`1`.as('countryCode').optional());
 const usAreaCode = re`\d{3}`.as('areaCode');
 export const baseUSPhoneNumber = re`${uscountryCode}\s*[\.\-\(]?\s*${usAreaCode}\s*[\.\-\)]?\s*${ussubscriber}`;
 
-// const _ustelephonePrefix = re`\d{3}`.as('us_telephonePrefix');
-// const _uslineNumber = re`\d{4}`.as('us_lineNumber');
-// const _ussubscriber = re`(?<us_subscriber>${_ustelephonePrefix}\s*[\.\-]?\s*${_uslineNumber})`;
-// const _uscountryCode = re`\+?`.then(re`1`.as('us_countryCode').optional());
-// const _usAreaCode = re`\d{3}`.as('us_areaCode');
-// const _baseUSPhoneNumber = re`${_uscountryCode}\s*[\.\-\(]?\s*${_usAreaCode}\s*[\.\-\)]?\s*${_ussubscriber}`;
-// const _ext = re`(?<us_fullextensionstring>(?:\s*(?:,|;)?\s*(?:ext(?:ension)?|extn|x\.?|#|-)\s*[:\.]?\s*(?<us_extension>\d{1,6})))?`;
-// const _US_PHONE_NUMBER_PATTERN_INTERNAL = re`${tel}\s*${_baseUSPhoneNumber}${_ext}`.as('us_phone');
-
-export const GLOBAL_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseGlobalPhoneNumber}${ext}`.as('phone').withParsers(handler).rename('global_phone', true);
-
-export const US_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseUSPhoneNumber}${ext}`.as('phone').withParsers(handler).rename('us_phone', true);
-
-export const PHONE_NUMBER_PATTERN = re`(${US_PHONE_NUMBER_PATTERN})|(${GLOBAL_PHONE_NUMBER_PATTERN})`;
-// console.log("parsers setup", Object.keys(PHONE_NUMBER_PATTERN.parsers ?? {}))
+export const _US_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseUSPhoneNumber}${ext}`.as('phone');
+export const US_PHONE_NUMBER_PATTERN = _US_PHONE_NUMBER_PATTERN.withParsers({
+    '*': noop,
+    groups: (g: any) => new PhoneNumber(g, _US_PHONE_NUMBER_PATTERN)
+}).template('us_phone');
+export const PHONE_NUMBER_PATTERN = re`(${US_PHONE_NUMBER_PATTERN})|(${GLOBAL_PHONE_NUMBER_PATTERN})`.withParsers({
+    groups: (d: any) => d.us_phone ?? d.global_phone
+}).template('phone');
 
 export interface DecomposedPhoneNumber{
     phone?: string;
@@ -296,11 +266,13 @@ export class PhoneNumber {
     public telephonePrefix: string | undefined;
     public lineNumber: string | undefined;
     public extension: string | undefined;
+    public patternMatched: RegExp | undefined;
 
-    constructor(phoneNumber: string | DecomposedPhoneNumber | PhoneNumber) {
+    constructor(phoneNumber: string | DecomposedPhoneNumber | PhoneNumber, patternMatched?: RegExp) {
         if (typeof phoneNumber === 'string') {
             phoneNumber = decomposePhoneNumber(phoneNumber);
         }
+        this.patternMatched = patternMatched;
         this.phone = phoneNumber.phone;
         this.subscriber = phoneNumber.subscriber;
         this.subscriberDigits  = phoneNumber.subscriber.replace(/[^\d]/g,'');

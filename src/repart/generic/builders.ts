@@ -1,19 +1,24 @@
 import {escape} from "../special";
-import {re} from "../core";
+import {_simpleWithParsers, patternHasUnicode, r, re} from "../core";
 
 export function anyOf(...parts: (RegExp | string)[]) {
     let parsers = {};
     parts.filter(p => p instanceof RegExp && (p as any).parsers).map(p => {
         Object.assign(parsers, (p as any).parsers);
-    })
-    const srcs = parts.map(p => p instanceof RegExp ? p.source : p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    });
+    const srcs = parts.map(p => p instanceof RegExp ? p.source : p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((a,b) => b.length - a.length);
     const flags = [...new Set(parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join(""))].join("");
-    return re`(?:${srcs.join("|")})`.withFlags(flags).withParsers(parsers);
+    return _simpleWithParsers(new RegExp(re`(?:${srcs.join("|")})`.source, flags), parsers);
 }
 export function noneOf(...parts: (RegExp | string)[]) {
     const alt = parts.map(p => p instanceof RegExp ? `(?:${p.source})` : p).join("|");
     const flags = [...new Set(["d", ...parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join("")])].join("");
-    return new RegExp(`(?:(?!${alt})[\s\S])+`, flags);
+    return new RegExp(`^(?!(?:${alt})$).+`, flags);
+}
+export function anyWordBut(...parts: (RegExp | string)[]) {
+    const alt = parts.map(p => p instanceof RegExp ? `(?:${p.source})` : p).join("|");
+    const flags = [...new Set(["d", ...parts.filter(p => p instanceof RegExp).map(p => (p as RegExp).flags).join("")])].join("");
+    return new RegExp(re`(?!(?:${alt})\b)(\w+)`.source, flags);
 }
 
 
@@ -40,9 +45,15 @@ export function wordList(
 
     const body = parts.join("|");
     const core = `(?:${body})`;
-    const wrapped = wholeWords ? `\\b${core}\\b` : core;
+    const u = patternHasUnicode(core);
+    const wrapped = wholeWords ? (u?r`(?<!\p{L})${core}(?!\p{L})`:r`\b${core}\b`) : core;
     const named = captureName ? `(?<${captureName}>${wrapped})` : wrapped;
-    return new RegExp(named, ignoreCase ? "id" : "d");
+    let flags =  ignoreCase ? "id" : "d";
+    if (u){
+        flags += "u"
+    }
+
+    return new RegExp(named, flags);
 }
 
 

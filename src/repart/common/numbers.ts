@@ -139,15 +139,14 @@ export function buildNumberPatterns({
 
     const sign = String.raw`[+-]?`;
 
-    const INT_PATTERN = new RegExp(`${sign}${intPart}`, 'd').withParsers({
-        _: (s: string) => ({raw: s, value: parseInt(s.replace(/\D/g, ''))})
-    });
-    const FLOAT_PATTERN = new RegExp(`${sign}${intPart}${decPart}`, 'd').withParsers({
-        _: (s: string) => {
-            console.log('parsing', s)
-            return ({raw: s, value: parseFloat(s.replace(thousands,'').replace(decimal, '.').replace(/[^\d\.]/g,''))})
-        }
-    });
+    const INT_PATTERN = new RegExp(`(?<raw>(?<value>${sign}${intPart}))`, 'd').withParsers({
+        value:  (s: string) =>  parseInt(s.replace(/\D/g, '')),
+        groups: g => ({raw: g.raw, value: g.value})
+    }).template('int');
+    const FLOAT_PATTERN = new RegExp(`(?<raw>(?<value>${sign}${intPart}${decPart}))`, 'd').withParsers({
+        value: (s: string) => parseFloat(s.replace(thousands,'').replace(decimal, '.').replace(/[^\d\.]/g,'')),
+        groups: g => ({raw: g.raw, value: g.value})
+    }).template('float');
 
     return { INT_PATTERN, FLOAT_PATTERN };
 }

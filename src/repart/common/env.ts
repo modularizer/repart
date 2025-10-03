@@ -2,8 +2,8 @@ import {re} from "../core";
 import {startLine} from "../generic";
 
 export const AZ = re`[A-Z]`;
-export const aZ = re`[A-Z]`;
-export const az = re`[A-Z]`;
+export const aZ = re`[A-Za-z]`;
+export const az = re`[a-z]`;
 export const AZ09 = re`[A-Z0-9]`;
 export const aZ09 = re`[A-Za-z0-9]`;
 export const az09 = re`[a-z0-9]`;

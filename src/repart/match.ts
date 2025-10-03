@@ -125,9 +125,11 @@ export type Raw =  RawGroupValue | null | RawGroupValue[];
 export class RawResult {
     private _raw: Raw;
     private _parsed?: ParsedResult;
+    public input: string | undefined;
     
-    constructor(raw: Raw) {
+    constructor(raw: Raw, input?: string) {
         this._raw = raw;
+        this.input = input;
 
         if (Array.isArray(raw)) {
             // Copy array properties
@@ -155,18 +157,20 @@ export class RawResult {
         }
     }
 
+
+
     get raw() {
         return this._raw;
     }
 
     parse(unnest?: boolean){
-        this._parsed = parse(this._raw, unnest);
+        this._parsed = parse(this._raw, unnest, this.input);
         return this._parsed;
     }
 
     get parsed(){
         if (this._parsed === undefined) {
-            this._parsed = parse(this._raw);
+            this._parsed = parse(this._raw, false, this.input);
         }
         return this._parsed;
     }
@@ -186,7 +190,7 @@ export class RawResult {
      * Returns the underlying parsed result as a plain object.
      */
     valueOf(): Raw {
-        return this.raw;
+        return this._raw;
     }
 
 
@@ -194,14 +198,14 @@ export class RawResult {
      * Custom toString for console.log to display as Raw value
      */
     toString(): string {
-        return JSON.stringify(this.raw, null, 2);
+        return JSON.stringify(this._raw, null, 2);
     }
 
     /**
      * Custom inspect for Node.js console.log to display as Raw value
      */
     [Symbol.for('nodejs.util.inspect.custom')]() {
-        return this.raw;
+        return this._raw;
     }
 }
 
@@ -290,13 +294,13 @@ export function matchRaw(input: string, pattern: string | number | RegExp, {maxM
         lastIndex = (pattern as RegExp).lastIndex;
     }
     if (maxMatches === 1){
-        const result = new RawResult(matches[0] || null);
+        const result = new RawResult(matches[0] || null, cacheInput?input:undefined);
         if (cacheInput) {
             (result as any).input = input;
         }
         return result;
     }
-    const result = new RawResult(matches);
+    const result = new RawResult(matches, cacheInput?input:undefined);
     if (cacheInput) {
         (result as any).input = input;
     }
@@ -341,9 +345,9 @@ export const tryjson: StringParser = (raw: string): string | number | null => {
         return raw;
     }
 }
-
+export const noop = (s: string) => s;
 /** Default parser used when no specific parser is provided */
-export const defaultStringParser = tryjson;
+export const defaultStringParser = noop;
 /**
  * Sets parsers on a RegExp object as a non-enumerable property.
  * This allows parsers to be attached to RegExp objects without interfering
@@ -356,16 +360,16 @@ export const defaultStringParser = tryjson;
 function setParsers(rx: RegExp, v: Parsers) {
     const groupNames = getAllGroupNames(rx);
     for (let k2 of Object.keys(v)){
-        if (!['groups', '_'].includes(k2)){
+        if (!['groups', '_', '*'].includes(k2) && !k2.endsWith(sep + 'groups')){
             k2 = k2.replace(/^_/, '');
             if (!groupNames.includes(k2)){
                 throw new Error(`invalid parser name. no group found named ${k2}`)
             }
         }
     }
-    if (v['_']){
-        const f = v['_'];
-        delete v['_'];
+    if (v['*']){
+        const f = v['*'];
+        delete v['*'];
         for (let gn of groupNames){
             if (v[gn] === undefined){
                 v[gn] = f;
@@ -430,9 +434,11 @@ export class ParsedResult {
     private _parsed: Parsed;
     private _result?: Result;
     [k: string | number]: any;
+    public input: string | undefined;
     
-    constructor(parsed: Parsed) {
+    constructor(parsed: Parsed, input?: string) {
         this._parsed = parsed;
+        this.input = input;
         
         if (Array.isArray(parsed)) {
             // Copy array properties
@@ -510,9 +516,9 @@ export class ParsedResult {
  * @param unnest - Whether to unnest the result during extraction
  * @returns ParseResult instance with transformed content and groups and .extract() method
  */
-export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
+export function parse(raw: Raw, unnest: boolean = false, input?: string): ParsedResult {
     if (!raw) {
-        const result = new ParsedResult(null);
+        const result = new ParsedResult(null, input);
         // Cache input if it was cached in the raw result
         if ((raw as any)?.input) {
             (result as any).input = (raw as any).input;
@@ -521,11 +527,11 @@ export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
     }
     if (Array.isArray(raw)) {
         const results: GroupValue[] = [];
-        for (let i = 0; i< raw.length; i++){
-            const v = parse(raw[i]);
+        for (let i = 0; i < raw.length; i++) {
+            const v = parse(raw[i], false, input);
             results.push(v.valueOf() as GroupValue);
         }
-        const result = new ParsedResult(results);
+        const result = new ParsedResult(results, input);
         // Cache input if it was cached in the raw result
         if ((raw as any).input) {
             (result as any).input = (raw as any).input;
@@ -536,11 +542,13 @@ export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
     const rawName = raw.name ?? '';
     const hasNamedParser = Object.keys(parsers).some(k => k === rawName);
     const hasSilentParser = Object.keys(parsers).some(k => k === '_' + rawName);
-    const parser = (hasNamedParser?parsers[rawName]:parsers['_'+rawName]) ?? parsers['_'] ?? defaultStringParser;
+    const parser = (hasNamedParser ? parsers[rawName] : parsers['_' + rawName]) ?? parsers['_'] ?? defaultStringParser;
     let parsed: any = raw;
     let rawGroups: Record<string, RawGroupValue> = raw.groups ?? {};
-    if ((hasSilentParser && parsers['_'+rawName] === null) || (!hasSilentParser && parsers['_'+rawName] === null)){
+    if ((hasSilentParser && parsers['_' + rawName] === null)) {
         parsed = {};
+    } else if ((!hasSilentParser && parsers[rawName] === null)){
+        parsed = undefined
     }else if (typeof parser === "string" || parser instanceof RegExp) {
         return matchRaw(raw.raw, parser, {offset: raw.startIndex}).parse(hasSilentParser);
     }else{
@@ -554,7 +562,7 @@ export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
     const groups: Record<string, GroupValue> = {};
     if (rawGroups) {
         for (const [k, rv] of Object.entries(rawGroups)) {
-            const parsed = parse(rv).valueOf();
+            const parsed = parse(rv, false, input).valueOf();
             if (parsed !== undefined) {
                 groups[k] = parsed as GroupValue;
             }
@@ -566,7 +574,7 @@ export function parse(raw: Raw, unnest: boolean = false): ParsedResult {
         parsed,
         unnest: unnest || hasSilentParser,
         groups,
-    });
+    }, input);
     
     // Cache input if it was cached in the raw result
     if ((raw as any).input) {
@@ -638,6 +646,10 @@ export class Result {
                 }
             }
         }
+    }
+
+    get input(): string | undefined {
+        return this._parsedResult.input;
     }
 
 
@@ -781,25 +793,32 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
         const groupParsers = Object.keys(allParsers)
             .filter(k => k.endsWith(`${sep}groups`))
             .sort((a, b) =>
-            countBlanks(a) - countBlanks(b) || b.length - a.length
+                (countBlanks(b) - countBlanks(a))  || b.length - a.length
         );
         // console.log("found group parsers", groupParsers)
-        //@ts-ignore
-        const groupsParser = allParsers.groups;
-        if(groupsParser){
-            o = groupsParser(o);
-        }
-        let okeys = Object.keys(o)
+        // console.log("keys", Object.keys(o));
+
+        let okeys;
         for (let gk of groupParsers){
             okeys = Object.keys(o)
-            const n = gk.replace(re`${sep}groups$`, '')
+            const n = gk.replace(re`${sep}groups$`, '');
             const pre = n + sep;
-            const outOfGroup = Object.fromEntries(okeys.filter(k2 => !k2.startsWith(pre) && k2 !== n).map(k2 => [k2, o[k2]]));
-            const inGroup = Object.fromEntries(okeys.filter(k2 => k2.startsWith(pre) || k2 === n).map(k2 => [k2.replace(re`^${pre}`, ''), o[k2]]));
-            console.log(gk, pre, inGroup)
-            // console.log("ingroup", inGroup, k, groupParsers)
+            const inGroup = {};
+            const outOfGroup = {};
+            for (let [k2, v2] of Object.entries(o)){
+                if (k2.startsWith(pre) || k2 === n){
+                    inGroup[k2.replace(re`^${pre}`, '')] = v2
+                }else{
+                    outOfGroup[k2] = v2
+                }
+            }
+            // const outOfGroup = Object.fromEntries(okeys.filter(k2 => !k2.startsWith(pre) && k2 !== n).map(k2 => [k2, o[k2]]));
+            // const inGroup = Object.fromEntries(okeys.filter(k2 => k2.startsWith(pre) || k2 === n).map(k2 => [k2.replace(re`^${pre}`, ''), o[k2]]));
+            // console.log(gk, pre, inGroup)
+            // console.log(gk, "ingroup", inGroup, 'out', outOfGroup)
             if (Object.keys(inGroup).length > 0) {
-                const r = allParsers[gk](inGroup);
+                const r = allParsers[gk](inGroup, {name: n, outer: {[n]: inGroup[n]}, inner: Object.fromEntries(Object.entries(inGroup).filter(([k2,v2]) => k2 != n))});
+                // console.log("parsed", r)
                 o = {
                     ...outOfGroup,
                     [n]: r
@@ -808,6 +827,12 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
         }
         okeys = Object.keys(o);
         o = Object.fromEntries(okeys.map(k2 => [k2.split(sep).filter(v => v).pop(), o[k2]]));
+
+        //@ts-ignore
+        const groupsParser = allParsers.groups;
+        if(groupsParser){
+            o = groupsParser(o, {name: k, outer: {[k]: o[k]}, inner: Object.fromEntries(Object.entries(o).filter(([k2, v2]) => k2 !=k))});
+        }
 
         if (k && !v.unnest && !flat){
             d[k] = o

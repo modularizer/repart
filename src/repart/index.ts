@@ -1,8 +1,8 @@
-import "./init"; // Initialize prototype extensions first
+export {initialized, init} from "./init"; // Initialize prototype extensions first
 
 export const registered = true;
 export {getGroupInfo, GroupDetails} from './decomposer';
-export {renameGroup, getAllGroupNames, getGroupName} from './core';
+export {getAllGroupNames, getGroupName} from './core';
 export {r, re, stack, k} from './core';
 export {match, extract, matchAndExtract, tryjson,
     type MatchOpts, type Result, type Extracted,

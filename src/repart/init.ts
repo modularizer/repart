@@ -8,3 +8,4 @@ import {addToPrototype} from "./global";
 addToPrototype();
 
 export const initialized = true;
+export const init = () => true;

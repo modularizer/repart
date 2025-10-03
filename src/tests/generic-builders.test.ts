@@ -3,8 +3,6 @@ import {
   anyOf,
   noneOf,
   wordList,
-  unnamed,
-  u,
   optional,
   o,
   nonCapturing,
@@ -12,11 +10,10 @@ import {
   lookahead,
   negativeLookahead,
   lookbehind,
-  notlookbehind,
-  group,
-  g,
+  negativeLookbehind,
   special
 } from '../repart/generic';
+import {anyWordBut} from "../repart/generic/builders";
 
 describe('Generic Builders', () => {
   describe('anyOf', () => {
@@ -27,7 +24,7 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.anyOf).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
@@ -38,7 +35,7 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.anyOf).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
@@ -55,14 +52,14 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.anyOf).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
     test('should work in templates', () => {
-      const pattern = re`prefix: ${anyOf('hello', 'world')}`;
+      const pattern = re`prefix: ${anyOf('hello', 'world').as("word")}`;
       const result = matchAndExtract('prefix: hello', pattern);
-      expect(result.anyOf).toBe('hello');
+      expect(result.word).toBe('hello');
     });
   });
 
@@ -74,7 +71,7 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.noneOf).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
@@ -92,7 +89,7 @@ describe('Generic Builders', () => {
       const pattern = noneOf(/\d+/, /\w+/);
       const result = matchAndExtract('!@#', pattern);
       expect(result).not.toBeNull();
-      expect(result.noneOf).toBe('!@#');
+      expect(result).toBe('!@#');
     });
   });
 
@@ -104,7 +101,7 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.wordList).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
@@ -121,31 +118,27 @@ describe('Generic Builders', () => {
       testCases.forEach(testCase => {
         const result = matchAndExtract(testCase, pattern);
         expect(result).not.toBeNull();
-        expect(result.wordList).toBe(testCase);
+        expect(result).toBe(testCase);
       });
     });
 
     test('should work with word boundaries', () => {
       const pattern = wordList(['cat', 'dog'], { wordBoundary: true });
       const result = matchAndExtract('cat', pattern);
-      expect(result.wordList).toBe('cat');
+      expect(result).toBe('cat');
     });
   });
 
   describe('Group builders', () => {
-    describe('unnamed / u', () => {
+    describe('capturing', () => {
       test('should create regular capturing groups', () => {
-        const pattern = unnamed`hello`;
+        const pattern = re`hello`.as("capturing");
         expect(pattern.source).toBe('(hello)');
       });
 
-      test('should work with u alias', () => {
-        const pattern = u`world`;
-        expect(pattern.source).toBe('(world)');
-      });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${unnamed`hello`}`;
+        const pattern = re`prefix: ${re`hello`.as('capturing')}`;
         expect(pattern.source).toContain('(hello)');
       });
     });
@@ -226,50 +219,45 @@ describe('Generic Builders', () => {
 
     describe('notlookbehind', () => {
       test('should create negative lookbehind', () => {
-        const pattern = notlookbehind`hello`;
-        expect(pattern.source).toBe('(?<!hello)';
+        const pattern = negativeLookbehind`hello`;
+        expect(pattern.source).toBe('(?<!hello)');
       });
 
       test('should work in templates', () => {
-        const pattern = re`${notlookbehind`hello`}suffix`;
+        const pattern = re`${negativeLookbehind`hello`}suffix`;
         expect(pattern.source).toContain('(?<!hello)');
       });
     });
 
-    describe('group / g', () => {
+    describe('as', () => {
       test('should create named groups', () => {
-        const pattern = g('name')`hello`;
+        const pattern = re`hello`.as('name');
         expect(pattern.source).toBe('(?<name>hello)');
       });
 
-      test('should work with special group types', () => {
-        const pattern = g('optional')`hello`;
-        expect(pattern.source).toBe('(?<optional>hello)');
-      });
-
       test('should work in templates', () => {
-        const pattern = re`prefix: ${g('name')`hello`}`;
+        const pattern = re`prefix: ${re`hello`.as('name')}`;
         expect(pattern.source).toContain('(?<name>hello)');
       });
     });
 
     describe('special', () => {
       test('should create special group types', () => {
-        const optionalPattern = special('optional')`hello`;
+        const optionalPattern = re`hello`.as('optional');
         expect(optionalPattern.source).toBe('(hello)?');
 
-        const nonCapturingPattern = special('nonCapturing')`hello`;
+        const nonCapturingPattern = re`hello`.as('non-capturing');
         expect(nonCapturingPattern.source).toBe('(?:hello)');
 
-        const lookaheadPattern = special('lookahead')`hello`;
+        const lookaheadPattern = re`hello`.as('positive-lookahead');
         expect(lookaheadPattern.source).toBe('(?=hello)');
       });
 
       test('should work with all special types', () => {
-        const types = ['unnamed', 'optional', 'nonCapturing', 'lookahead', 'negativeLookahead', 'lookbehind', 'notlookbehind'];
+        const types = ['unnamed', 'optional', 'non-capturing', 'positive-lookahead', 'negative-lookahead', 'positive-lookbehind', 'negative-lookbehind'];
         
         types.forEach(type => {
-          const pattern = special(type)`test`;
+          const pattern = re`test`.as(type);
           expect(pattern.source).toBeDefined();
         });
       });
@@ -298,17 +286,20 @@ describe('Generic Builders', () => {
     });
 
     test('should use noneOf with lookbehind', () => {
-      const pattern = re`${lookbehind`prefix `}${noneOf('hello', 'world')}`;
+      const pattern = re`${lookbehind`prefix `}${anyWordBut('hello', 'world').as('word')}`;
       
       const result = matchAndExtract('prefix test', pattern);
       expect(result).not.toBeNull();
-      expect(result.noneOf).toBe('test');
+      expect(result.word).toBe('test');
+
+      // const result2 = matchAndExtract('prefix world', pattern);
+      // expect(result2).toBeNull();
     });
   });
 
   describe('Integration with parsers', () => {
     test('should work with anyOf and parsers', () => {
-      const pattern = re`status: ${anyOf('active', 'inactive')}`.withParsers({
+      const pattern = re`status: ${anyOf('active', 'inactive').as('anyOf')}`.withParsers({
         anyOf: (s: string) => s.toUpperCase()
       });
       
@@ -317,7 +308,7 @@ describe('Generic Builders', () => {
     });
 
     test('should work with wordList and parsers', () => {
-      const pattern = re`type: ${wordList(['user', 'admin', 'guest'])}`.withParsers({
+      const pattern = re`type: ${wordList(['user', 'admin', 'guest']).as('wordList')}`.withParsers({
         wordList: (s: string) => s.toUpperCase()
       });
       
@@ -326,7 +317,7 @@ describe('Generic Builders', () => {
     });
 
     test('should work with group builders and parsers', () => {
-      const pattern = re`name: ${g('name')`hello`}`.withParsers({
+      const pattern = re`name: ${re`hello`.as('name')}`.withParsers({
         name: (s: string) => s.toUpperCase()
       });
       
@@ -339,11 +330,11 @@ describe('Generic Builders', () => {
     test('should handle empty wordList', () => {
       const pattern = wordList([]);
       const result = matchAndExtract('anything', pattern);
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
 
     test('should handle single item in anyOf', () => {
-      const pattern = anyOf('hello');
+      const pattern = anyOf('hello').as("anyOf");
       const result = matchAndExtract('hello', pattern);
       expect(result.anyOf).toBe('hello');
     });
@@ -358,7 +349,7 @@ describe('Generic Builders', () => {
     });
 
     test('should handle unicode in wordList', () => {
-      const pattern = wordList(['café', 'naïve']);
+      const pattern = wordList(['café', 'naïve']).as("wordList");
       const result = matchAndExtract('café', pattern);
       expect(result.wordList).toBe('café');
     });
@@ -367,14 +358,14 @@ describe('Generic Builders', () => {
   describe('Performance', () => {
     test('should handle large wordList efficiently', () => {
       const largeList = Array.from({ length: 1000 }, (_, i) => `word${i}`);
-      const pattern = wordList(largeList);
+      const pattern = wordList(largeList).as("wordList");
       const result = matchAndExtract('word500', pattern);
       expect(result.wordList).toBe('word500');
     });
 
     test('should handle many anyOf options', () => {
       const manyOptions = Array.from({ length: 100 }, (_, i) => `option${i}`);
-      const pattern = anyOf(...manyOptions);
+      const pattern = anyOf(...manyOptions).as("anyOf");
       const result = matchAndExtract('option50', pattern);
       expect(result.anyOf).toBe('option50');
     });

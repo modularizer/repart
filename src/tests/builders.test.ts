@@ -86,7 +86,7 @@ describe('Builder Methods', () => {
     });
 
     test('should preserve parsers', () => {
-      const originalPattern = /\d+/.withParsers({ number: parseInt });
+      const originalPattern = /\d+/.as("number").withParsers({ number: parseInt });
       const wrapped = originalPattern.wrappedWith('"');
       expect((wrapped as any).parsers).toHaveProperty('number');
     });
@@ -119,8 +119,8 @@ describe('Builder Methods', () => {
     });
 
     test('should preserve parsers from both patterns', () => {
-      const pattern1 = /\d+/.withParsers({ id: parseInt });
-      const pattern2 = /\w+/.withParsers({ name: (s: string) => s.toUpperCase() });
+      const pattern1 = /\d+/.as("id").withParsers({ id: parseInt });
+      const pattern2 = /\w+/.as("name").withParsers({ name: (s: string) => s.toUpperCase() });
       const combined = pattern1.then(pattern2);
       
       expect((combined as any).parsers).toHaveProperty('id');
@@ -150,7 +150,7 @@ describe('Builder Methods', () => {
     });
 
     test('should preserve parsers', () => {
-      const originalPattern = /\d+/.withParsers({ number: parseInt });
+      const originalPattern = /\d+/.as("number").withParsers({ number: parseInt });
       const optional = originalPattern.optional();
       expect((optional as any).parsers).toHaveProperty('number');
     });
@@ -189,7 +189,7 @@ describe('Builder Methods', () => {
     });
 
     test('should preserve parsers', () => {
-      const originalPattern = /\d+/.withParsers({ number: parseInt });
+      const originalPattern = /\d+/.as("number").withParsers({ number: parseInt });
       const repeated = originalPattern.repeated(1, 3);
       expect((repeated as any).parsers).toHaveProperty('number');
     });
@@ -217,7 +217,7 @@ describe('Builder Methods', () => {
     });
 
     test('should preserve parsers', () => {
-      const originalPattern = /\d+ \w+/.withParsers({ 
+      const originalPattern = /(?<number>\d+) (?<word>\w+)/.withParsers({
         number: parseInt, 
         word: (s: string) => s.toUpperCase() 
       });
@@ -253,9 +253,9 @@ describe('Builder Methods', () => {
 
     test('should preserve parsers through chaining', () => {
       const pattern = /\d+/
+          .as('id')
         .withParsers({ id: parseInt })
-        .as('id')
-        .then(/\w+/.withParsers({ name: (s: string) => s.toUpperCase() }).as('name'))
+        .then(/\w+/.as('name').withParsers({ name: (s: string) => s.toUpperCase() }))
         .optional();
       
       expect((pattern as any).parsers).toHaveProperty('id');

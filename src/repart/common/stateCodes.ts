@@ -21,40 +21,40 @@ export const STATE_NAME_PATTERN = wordList(stateNames, {
     ignoreCase: true,
     wholeWords: true,
     flexibleSpaces: true,
-    captureName: "stateName",
+    captureName: "raw",
 }).withParsers({
-        _stateName: (s: string) => {
+        raw: (s: string) => {
             const k = s.toLowerCase();
             const c = invMap[k];
             return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]};
-        }
-    }
-);
+        },
+        groups: (g) => g.raw
+    }).template("state");
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
 export const STATE_CODE_PATTERN = wordList(stateAbbrs, {
     ignoreCase: false,
     wholeWords: true,
     flexibleSpaces: false,
-    captureName: "stateCode",
+    captureName: "raw",
 }).withParsers({
-        _stateCode: (s: string) => {
+        raw: (s: string) => {
 
             const u = s.toUpperCase();
             const name = stateCodes[u];
             return {stateName: name, stateCode: s.toUpperCase(), state: s.toUpperCase()};
-        }
-    }
-);
+        },
+    groups: (g) => g.raw
+}).template("state");
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
 export const STATE_PATTERN = wordList([...stateNames,  ...stateAbbrs], {
     ignoreCase: false,
     wholeWords: true,
     flexibleSpaces: false,
-    captureName: "state",
+    captureName: "raw",
 }).withParsers({
-    _state: (s: string) => {
+    raw: (s: string) => {
 
         const u = s.toUpperCase();
         const name = stateCodes[u];
@@ -64,9 +64,10 @@ export const STATE_PATTERN = wordList([...stateNames,  ...stateAbbrs], {
         const k = s.toLowerCase();
         const c = invMap[k];
         return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]}
-    }
+    },
+    groups: (g) => g.raw
 }
-);
+).template("state");
 
 export type StateCode = keyof typeof stateCodes;
 

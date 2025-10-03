@@ -7,7 +7,7 @@ import {Parsers} from "./match";
 
 export const dedup = (s: string) =>  [...new Set(s)].join("");
 
-
+const sep = '____'
 /**
  * Converts a value to a string representation suitable for regex patterns.
  * If the input is a RegExp, returns its source pattern. Otherwise, converts to string.
@@ -17,8 +17,34 @@ export const dedup = (s: string) =>  [...new Set(s)].join("");
  */
 export const asString = (child: RegExp | string | number | undefined) => (child instanceof RegExp)?child.source:('' + (child ?? ''));
 
+
+
+export function patternHasUnicode(p: string | RegExp): boolean {
+    const src = asString(p);
+
+    // 1) literal non-ASCII
+    if (/[^\u0000-\u007F]/.test(src)) return true;
+
+    // 2) \u{...} (code point) or \uXXXX
+    if (/\\u\{[0-9A-Fa-f]+\}/.test(src)) return true;
+    if (/\\u[0-9A-Fa-f]{4}/.test(src)) return true;
+
+    // 3) \xHH where HH > 7F
+    for (const m of src.matchAll(/\\x([0-9A-Fa-f]{2})/g)) {
+        if (parseInt(m[1], 16) > 0x7F) return true;
+    }
+
+    // 4) Unicode property escapes \p{...} or \P{...}
+    if (/\\[pP]\{[^}]+\}/.test(src)) return true;
+
+    return false;
+}
+
+
+
+
 /**
- * Alias of String.raw
+ * Similar to String.raw
  *
  * Builds a raw string from template literals, allowing substitution of regex patterns.
  * This function processes template strings and interpolates values, converting RegExp objects
@@ -31,9 +57,18 @@ export const asString = (child: RegExp | string | number | undefined) => (child 
  * @example
  * const pattern = r`word${/\d+/}end`; // "word\\d+end"
  */
-export const r = String.raw;
-
-
+export function r(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    let out = "";
+    for (let i = 0; i < strings.raw.length; i++) {
+        out += strings.raw[i];
+        if (i < vals.length) {
+            const v = vals[i];
+            const s = asString(v);
+            out += s;
+        }
+    }
+    return out;
+}
 
 export function _simpleWithParsers(rx: RegExp, parsers: Parsers = {}){
     // simple internal withparsers
@@ -80,6 +115,9 @@ export function re(strings: TemplateStringsArray, ...vals: Array<string | number
             out += s;
         }
     }
+    if (patternHasUnicode(out)){
+        flags += "u";
+    }
     const f = dedup(flags);
     const p = new RegExp(out, f);
     return _simpleWithParsers(p, parsers);
@@ -89,7 +127,7 @@ export function re(strings: TemplateStringsArray, ...vals: Array<string | number
 export const disallowedGroupNames = [
     'capturing' ,'non-capturing' , 'positive-lookahead' , 'positive-lookbehind' , 'negative-lookahead' , 'negative-lookbehind' , 'named',
     'unnamed' , 'nc' , 'lookahead' , 'lookbehind' , 'nlookahead' , 'nlookbehind',
-    'groups', 'extracted', 'parsed', 'rresult', 'parsedResult'
+    'groups', 'extracted', 'parsed', 'rresult', 'parsedResult', 'input'
 ];
 
 /**
@@ -121,6 +159,7 @@ export function getAllGroupNames(rx: string | RegExp): string[] {
 
 
 function _simpleRenameGroup(pattern: string | RegExp, oldName: string | undefined, newName: string): RegExp {
+    // console.log("simple rename", pattern, oldName, newName)
     if (disallowedGroupNames.includes(newName)){
         throw new Error(`repart library has disallowed the group name "${newName}" to avoid collisions with some of our property names and custom values`)
     }
@@ -146,10 +185,16 @@ function _simpleRenameGroup(pattern: string | RegExp, oldName: string | undefine
     const replacement = `(?<${newName}>`;
     
     // Replace all occurrences of the old group name
-    const src = source.replace(namedGroupPattern, replacement);
+    let src = source.replace(namedGroupPattern, replacement);
+
+
+    const namedGroupPattern2 = re`\(\?<${oldName + sep}(\w+)>`.withFlags('g');
+    const replacement2 = `(?<${newName + sep}$1>`;
+    src = src.replace(namedGroupPattern2, replacement2);
     //@ts-ignore
     const parsers = {...(pattern.parsers ?? {})}
     if (oldName) {
+        // console.log(`replacing ${oldName} with ${newName}: `, Object.keys(parsers))
         if (parsers[oldName] !== undefined) {
             const f = parsers[oldName];
             delete parsers[oldName];
@@ -160,8 +205,26 @@ function _simpleRenameGroup(pattern: string | RegExp, oldName: string | undefine
             delete parsers['_' + oldName];
             parsers['_' + newName] = f2;
         }
+        // console.log('p', Object.keys(parsers).filter(k => k.startsWith(oldName + sep)))
+        for (let oldKey of Object.keys(parsers).filter(k => k.startsWith(oldName + sep))){
+            if (parsers[oldKey] !== undefined) {
+                const f = parsers[oldKey];
+                delete parsers[oldKey];
+                // console.log(oldKey, '    =>    ',newName + sep + oldKey.slice((oldName + sep).length))
+                parsers[newName + sep + oldKey.slice((oldName + sep).length)] = f;
+            }
+        }
+        for (let oldKey of Object.keys(parsers).filter(k => k.startsWith('_' + oldName + sep))){
+            if (parsers[oldKey] !== undefined) {
+                const f = parsers[oldKey];
+                delete parsers[oldKey];
+                // console.log(oldKey,'    =>    ', '_' + newName + sep + oldKey.slice((oldName + sep).length + 1))
+                parsers['_' + newName + sep+ oldKey.slice((oldName + sep).length + 1)] = f;
+            }
+        }
     }
 
+    // console.log(Object.keys(parsers));
     return _simpleWithParsers(new RegExp(src, flags), parsers);
 }
 
@@ -189,8 +252,8 @@ export function simplePrependName(pattern: string | RegExp, prefix: string): Reg
 
 
 
-export function renameGroup(pattern: string | RegExp, newName: string, wrap: boolean = false): RegExp {
-    if (disallowedGroupNames.includes(newName)){
+export function templateGroup(pattern: string | RegExp, newName?: string): RegExp {
+    if (newName && disallowedGroupNames.includes(newName)){
         throw new Error(`repart library has disallowed the group name "${newName}" to avoid collisions with some of our property names and custom values`)
     }
     const source = asString(pattern);
@@ -199,32 +262,23 @@ export function renameGroup(pattern: string | RegExp, newName: string, wrap: boo
     // Validate that newName doesn't already exist
     const existingNames = getAllGroupNames(pattern);
     // console.log("existing names", existingNames)
-    if (existingNames.includes(newName)) {
+    if (newName && existingNames.includes(newName)) {
         throw new Error(`New name '${newName}' already exists in pattern. Existing groups: ${existingNames.join(', ')}`);
     }
-    const oldName = wrap?'':getGroupName(pattern);
+    const _oldName = getGroupName(pattern);
     let src = source;
-    if (wrap){
+    if (newName !== _oldName){
         src = r`(?<${newName}>${source})`;
-    }else if (!oldName){
-        if (/^\([\s\S]*\)$/.test(source) && !'?<'.includes(source.slice(1,2))){
-            src = r`(?<${newName}>${source.slice(1, source.length -1)})`;
-        }else {
-            src = r`(?<${newName}>${source})`;
-        }
     }
 
     // Create regex to find and replace the named group
-
-    const sep = '____';
     const prefix = `${newName}${sep}`;
-    const oldPrefix = `${oldName}${sep}`;
 
     //@ts-ignore
     const parsers = {...(pattern.parsers ?? {})}
     // console.log("og parsers", Object.keys(parsers))
     for (let name of existingNames){
-        const rep = (name === oldName)?newName:((name.startsWith(oldPrefix))?name.replace(re`^${oldPrefix}`, prefix):`${prefix}${name}`);
+        const rep = `${prefix}${name}`;
         // console.log('changing', name, rep)
         const oldPattern = re`\(\?<${name}>`
         const newValue = `(?<${rep}>`;
@@ -242,9 +296,14 @@ export function renameGroup(pattern: string | RegExp, newName: string, wrap: boo
             delete parsers['_' + name];
             parsers['_' + rep] = f2;
         }
+        if (parsers[name + sep + 'groups'] !== undefined) {
+            const f2 = parsers[name + sep + 'groups'];
+            delete parsers[name + sep + 'groups'];
+            parsers[rep + sep + 'groups'] = f2;
+        }
     }
 
-    const oldgroups = oldPrefix + 'groups';
+    const oldgroups = 'groups';
     if (parsers[oldgroups] !== undefined) {
         const f = parsers[oldgroups];
         delete parsers[oldgroups];

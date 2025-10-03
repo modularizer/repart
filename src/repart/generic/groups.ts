@@ -1,6 +1,6 @@
 import {re} from "../core";
 import {UnnamedGroupType, UnnamedGroupTypeAliases} from "../grouping";
-import {renameGroup, disallowedGroupNames, simpleRename} from "../core";
+import {disallowedGroupNames, simpleRename} from "../core";
 
 export function capturing(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>){
     return re`(${re(strings, ...vals)})`
@@ -66,6 +66,7 @@ export function as(pattern: string | RegExp, groupname: string, wrap: boolean = 
     if (groupname === 'negative-lookahead' || groupname === 'nlookahead') return negativeLookahead`${pattern}`;
     if (groupname === 'negative-lookbehind' || groupname === 'nlookbehind') return negativeLookbehind`${pattern}`;
     if (groupname === 'optional' || groupname === '?') return re`${pattern}`.optional();
+    if (groupname === 'anchored') return re`^${pattern}$`;
 
     // return renameGroup(pattern, groupname, wrap)
     return simpleRename(pattern, groupname)

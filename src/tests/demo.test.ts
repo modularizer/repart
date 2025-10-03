@@ -54,17 +54,13 @@ describe('RePart Demo Tests', () => {
     
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3);
-    expect(result[0].word).toBe('hello');
-    expect(result[1].word).toBe('world');
-    expect(result[2].word).toBe('test');
+    expect(result[0]).toBe('hello');
+    expect(result[1]).toBe('world');
+    expect(result[2]).toBe('test');
   });
 
   test('should handle complex parsing', () => {
-    const pattern = re`
-      name: ${word.as('name')}, 
-      email: ${EMAIL_PATTERN}, 
-      age: ${num.as('age')}
-    `.withParsers({
+    const pattern = re`name: ${word.as('name')}, email: ${EMAIL_PATTERN}, age: ${num.as('age')}`.withParsers({
       name: (s: string) => s.toUpperCase(),
       age: parseInt
     });

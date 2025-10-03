@@ -4,7 +4,7 @@
  * for flag manipulation and parser management.
  */
 import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags"; // good, no add to prototype deps
-import {asString, re, renameGroup} from "./core"; // good, no add to prototype deps
+import {asString, re, templateGroup} from "./core"; // good, no add to prototype deps
 import {escape} from "./special"; // good, no add to prototype deps
 import {Parsers, withParsers, matchRaw, matchAndExtract, Result, RawResult, Extracted} from "./match";
 import {special, replacedPattern, space, as} from "./generic";
@@ -70,7 +70,8 @@ declare global {
          * const optional = /\w+/.as('optional'); // (\w+)?
          */
         as(name: string | special, wrap?: boolean): RegExp;
-        rename(name: string | special, wrap?: boolean): RegExp;
+
+        template(name?: string): RegExp;
 
         /** Creates a new RegExp with specified flags removed from existing ones */
         removeFlags(flags?: RegExpFlags): RegExp;
@@ -288,6 +289,19 @@ declare global {
          * console.log(info.namedGroups.value.level); // 1
          */
         readonly info: GroupInfo;
+
+        /**
+         * Returns formatted pattern information using GroupInfo's toString method.
+         * Provides colored pattern visualization for debugging and introspection.
+         *
+         * @returns String representation of the pattern with syntax highlighting
+         *
+         * @example
+         * const pattern = /(?<name>\w+): (?<value>\d+)/;
+         * console.log(pattern.toString()); // Colored pattern visualization
+         */
+        toString(): string;
+
     }
 }
 
@@ -344,8 +358,8 @@ export function addToPrototype() {
         return as(this, name, wrap);
     });
 
-    def('rename', function (this: RegExp, name: string | special, wrap: boolean = false) {
-        return renameGroup(this, name, wrap);
+    def('template', function (this: RegExp, name?: string) {
+        return templateGroup(this, name);
     });
 
     /**
@@ -442,7 +456,27 @@ export function addToPrototype() {
      */
     Object.defineProperty(RegExp.prototype, 'info', {
         get: function (this: RegExp) {
+            // console.log("getting")
             return new GroupInfo(this);
+        },
+        configurable: true
+    });
+
+    /**
+     * Implementation of the 'toString' method - returns formatted pattern information.
+     * Uses the GroupInfo's toString method to provide colored pattern visualization.
+     */
+    def('toString', function (this: RegExp) {
+        return this.info.toString();
+    });
+
+    /**
+     * Implementation of the custom inspect method for Node.js console.log.
+     * Uses the GroupInfo's toString method to provide colored pattern visualization.
+     */
+    Object.defineProperty(RegExp.prototype, Symbol.for('nodejs.util.inspect.custom'), {
+        value: function (this: RegExp) {
+            return this.info.toString();
         },
         configurable: true
     });

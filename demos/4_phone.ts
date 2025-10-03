@@ -5,16 +5,23 @@ import {
     STATE_PATTERN,
     US_PHONE_NUMBER_PATTERN
 } from "../src/repart/common";
-import {matchAndExtract, re} from "../src/repart";
+import {matchAndExtract, re, initialized, init} from "../src/repart";
+// console.log(initialized)
+init()
 // console.log(PHONE_NUMBER_PATTERN)
 
-const u = '+1-555-123-4567';
-console.log(PHONE_NUMBER_PATTERN.info)
+console.log(/\d+/)
+console.log(/(\d+)/)
+console.log(/(?:\d+)/)
+console.log(/(?:\d+)\w+/)
+const u = '555-123';
+// console.log(PHONE_NUMBER_PATTERN)
+// console.log(PHONE_NUMBER_PATTERN.info)
 // console.log(PHONE_NUMBER_PATTERN.info.groupNames)
 
 // const p = PHONE_NUMBER_PATTERN.as('jefophone');
-const p = PHONE_NUMBER_PATTERN;
-console.log(p.info);
+const p = PHONE_NUMBER_PATTERN.as('taco');
+console.log('\n\n' + p);
 // console.log(Object.keys(p.parsers ?? {}));
 const ru = p.matchAndExtract(u);
 console.log(ru)
