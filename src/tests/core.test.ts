@@ -74,8 +74,8 @@ describe('Core Features', () => {
     });
 
     test('should handle chaining with other methods', () => {
-      const pattern = /\d+/.as('id').then('\\s*').as('spaced');
-      expect(pattern.source).toBe('(?<spaced>(?<id>\\d+)\\s*)');
+      const pattern = /\d+/.as('id').then('\\s*').as('s');
+      expect(pattern.source).toBe('(?<s>(?<id>\\d+)\\s*)');
     });
   });
 

@@ -507,6 +507,27 @@ export class ParsedResult {
     }
 }
 
+
+export function parseValue(raw: any, parsers: Record<string, StringParser>, key: string, offset: number = 0){
+    const hasNamedParser = Object.keys(parsers).some(k => k === key);
+    const hasSilentParser = Object.keys(parsers).some(k => k === '_' + key);
+    const parser = (hasNamedParser ? parsers[key] : parsers['_' + key]) ?? parsers['_'] ?? defaultStringParser;
+    let parsed: any = raw;
+    if ((hasSilentParser && parsers['_' + key] === null)) {
+        parsed = {};
+    } else if ((!hasSilentParser && parsers[key] === null)){
+        parsed = undefined
+    }else if (typeof parser === "string" || parser instanceof RegExp) {
+        return matchRaw(raw, parser, {offset}).parse(hasSilentParser);
+    }else{
+        if (typeof parser === 'function') {
+            parsed = parser(raw, {offset});
+        } else {
+            parsed = raw;
+        }
+    }
+    return parsed;
+}
 /**
  * Parses raw match results by applying custom parsers to matched content.
  * This function transforms raw match data into structured, parsed results
@@ -540,26 +561,14 @@ export function parse(raw: Raw, unnest: boolean = false, input?: string): Parsed
     }
     const parsers = ((raw.pattern as any)?.parsers ?? {});
     const rawName = raw.name ?? '';
-    const hasNamedParser = Object.keys(parsers).some(k => k === rawName);
     const hasSilentParser = Object.keys(parsers).some(k => k === '_' + rawName);
-    const parser = (hasNamedParser ? parsers[rawName] : parsers['_' + rawName]) ?? parsers['_'] ?? defaultStringParser;
-    let parsed: any = raw;
-    let rawGroups: Record<string, RawGroupValue> = raw.groups ?? {};
-    if ((hasSilentParser && parsers['_' + rawName] === null)) {
-        parsed = {};
-    } else if ((!hasSilentParser && parsers[rawName] === null)){
-        parsed = undefined
-    }else if (typeof parser === "string" || parser instanceof RegExp) {
-        return matchRaw(raw.raw, parser, {offset: raw.startIndex}).parse(hasSilentParser);
-    }else{
-        if (typeof parser === 'function') {
-            parsed = parser(raw.raw, {offset: raw.startIndex});
-        } else {
-            parsed = raw.raw;
-        }
+    let parsed = parseValue(raw.raw, parsers, rawName, raw.startIndex);
+    if (parsed instanceof ParsedResult){
+        return parsed;
     }
 
     const groups: Record<string, GroupValue> = {};
+    let rawGroups: Record<string, RawGroupValue> = raw.groups ?? {};
     if (rawGroups) {
         for (const [k, rv] of Object.entries(rawGroups)) {
             const parsed = parse(rv, false, input).valueOf();
@@ -715,7 +724,6 @@ const sep = '____';
 export function extract(parsedResult: ParsedResult, k?: string, d: Record<string, any> = {}, flat: boolean = false): Result {
     const v: Parsed = parsedResult.parsed;
     if (!v) {
-        // console.log("null result")
         return new Result(parsedResult, null);
     }
     if (Array.isArray(v)){
@@ -817,8 +825,11 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
             // console.log(gk, pre, inGroup)
             // console.log(gk, "ingroup", inGroup, 'out', outOfGroup)
             if (Object.keys(inGroup).length > 0) {
-                const r = allParsers[gk](inGroup, {name: n, outer: {[n]: inGroup[n]}, inner: Object.fromEntries(Object.entries(inGroup).filter(([k2,v2]) => k2 != n))});
-                // console.log("parsed", r)
+                let r = allParsers[gk](inGroup, {name: n, outer: {[n]: inGroup[n]}, inner: Object.fromEntries(Object.entries(inGroup).filter(([k2,v2]) => k2 != n))});
+                // r = parseValue(r, allParsers, n, parsedResult.startIndex);
+                // if (r instanceof ParsedResult){
+                //     r = extract(parsedResult, n)
+                // }
                 o = {
                     ...outOfGroup,
                     [n]: r

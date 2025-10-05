@@ -168,7 +168,7 @@ function _simpleRenameGroup(pattern: string | RegExp, oldName: string | undefine
 
     // Validate that newName doesn't already exist
     const existingNames = getAllGroupNames(pattern);
-    if (existingNames.includes(newName)) {
+    if (newName != oldName && existingNames.includes(newName)) {
         throw new Error(`New name '${newName}' already exists in pattern. Existing groups: ${existingNames.join(', ')}`);
     }
     if (!oldName){

@@ -11,7 +11,8 @@ export function replacedPattern(replacements: [string| RegExp, string | number |
             if (v instanceof RegExp){
                 flags += v.flags;
             }
-            s = s.replace(k, asString(v))
+            const kp = re`${k}`.withFlags('g');
+            s = s.replace(kp, asString(v))
         }
         return re`${s}`.withFlags(flags).withParsers(p.parsers);
     }

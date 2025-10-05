@@ -90,8 +90,9 @@ init()
 // const result = matchAndExtract('hello\nworld\ntest', pattern);
 // const pattern = re`prefix:\s*(?<a>\d+)\s*${paddedline`hello`.as('paddedline2')}`;
 // const result = matchAndExtract('prefix: 5  \nhello  \n', pattern);
-const pattern = re`${padded`key`}${separator`:`}${padded`value`.as('value')}`;
-const result = matchAndExtract(' key : value ', pattern);
+const pattern = re`name:${padded`\w+`.as('padded')}`
+
+const result = matchAndExtract('name:  john  ', pattern);
 
 // const pattern = re`prefix: ${line`${re`hello`.as('line')}`}`;
 // const result = matchAndExtract('prefix: \nhello', pattern);

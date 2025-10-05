@@ -221,9 +221,9 @@ describe('Builder Methods', () => {
         number: parseInt, 
         word: (s: string) => s.toUpperCase() 
       });
-      const spaced = originalPattern.spaced();
-      expect((spaced as any).parsers).toHaveProperty('number');
-      expect((spaced as any).parsers).toHaveProperty('word');
+      const s = originalPattern.spaced();
+      expect((s as any).parsers).toHaveProperty('number');
+      expect((s as any).parsers).toHaveProperty('word');
     });
 
     test('should work with other methods', () => {

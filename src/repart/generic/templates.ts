@@ -20,7 +20,7 @@ import {lookahead, negativeLookahead} from "./groups";
  * const pattern = padded`(?<word>.*)`; // matches with all spaces (\s*) before and after
 */
 export function padded(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`(?:\s*)(?<content>${re(strings, ...vals)})(?:\s*)`.template("padded", (g: any) => g.content);
+    return re`\s*(?<content>${re(strings, ...vals)})\s*`.template("padded", (g: any) => g.content);
 }
 
 
@@ -68,7 +68,7 @@ export function paddedmline(strings: TemplateStringsArray, ...vals: Array<string
  * const pattern = line`hello`; // Uses startLine and endLine patterns
  */
 export function line(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`(?:^|\n)(?<content>${re(strings, ...vals)})\s*(?:(?:(?:${newLine})|$))`.template("line",  (g: any) => g.content);
+    return re`(?<=^|\n)(?<content>${re(strings, ...vals)})\s*(?=(?:(?:${newLine})|$))`.template("line",  (g: any) => g.content);
 }
 
 /**
@@ -79,7 +79,7 @@ export function line(strings: TemplateStringsArray, ...vals: Array<string | numb
  * const pattern = paddedline`hello`; // Padded version of line matching
  */
 export function paddedline(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`(?:^|\n)\s*(?<content>${re(strings, ...vals)})\s*(?:(?:(?:${newLine})|$))`.template("paddedline", g => g.content);
+    return re`(?<=(?:^|\n))\s*(?<content>${re(strings, ...vals)})\s*(?=(?:(?:${newLine})|$))`.template("paddedline", g => g.content);
 }
 
 
@@ -100,7 +100,7 @@ export function paddedline(strings: TemplateStringsArray, ...vals: Array<string 
  */
 export function separator(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
     const pat = re(strings, ...vals);
-    return  re`(?<before>${any}*?)(?<match>${pat})(?<after>${any}*)`.template('separator')
+    return  re`(?<before>${any}*?)(?<match>${pat})(?=(?<after>${any}*))`.template('separator')
 }
 
 

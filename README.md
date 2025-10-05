@@ -72,7 +72,7 @@ console.log(sInd, eInd, input.slice(sInd, eInd)); // 28 42 john@gmail.com
 - [.then(after)](#then) - Concatenate: `/\d+/.then('\\s*')` → `/\d+\s* /`
 - [.optional()](#optional) - Make optional: `/\d+/.optional()` → `/\d+?/`
 - [.repeated(min?, max?)](#repeated) - Add quantifiers: `/\d/.repeated(1,3)` → `/\d{1,3}/`
-- [.spaced()](#spaced) - Flexible whitespace: `/hello world/.spaced()` → matches "hello world", "hello  world", etc.
+- [.spaced()](#s) - Flexible whitespace: `/hello world/.spaced()` → matches "hello world", "hello  world", etc.
 
 **Parsing Setup** - `.withParsers` helps you setup post-processors, and cascading group processing
 - [.withParsers(parsers)](#withparsers) - Add custom parsing: `pattern.withParsers({name: s => s.toUpperCase()})`
@@ -270,7 +270,7 @@ const optional = /\w+/.as('optional'); // (\w+)?
 const lookbehind = /\d+/.as('lookbehind'); // (?<=\d+)
 
 // Chaining
-const complex = /\d+/.as('id').then('\\s*').as('spaced'); // (?<spaced>(?<id>\d+)\s*)
+const complex = /\d+/.as('id').then('\\s*').as('s'); // (?<s>(?<id>\d+)\s*)
 ```
 
 ---

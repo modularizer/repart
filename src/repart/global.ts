@@ -389,7 +389,7 @@ declare global {
  * - Group creation (as)
  * - Pattern composition (wrappedWith, then)
  * - Quantifier application (optional, repeated)
- * - Flexible whitespace matching (spaced)
+ * - Flexible whitespace matching (s)
  *
  * The methods are added as non-enumerable, configurable properties to avoid
  * interfering with normal RegExp iteration and serialization.
@@ -497,8 +497,8 @@ export function addToPrototype() {
      * Uses replacedPattern to replace space characters with consecutive whitespace matching (excluding newlines).
      */
     def('spaced', function (this: RegExp) {
-        const spacedPattern = replacedPattern([[/ +/g, space]]);
-        return spacedPattern`${this}`;
+        const sPattern = replacedPattern([[/\\n+/g, '\\s+'], [/\\t+/g, '\\s+'], [/\s+/g, '\\s+'], [/\\s\+\\s\+/g, '\\s+']]);
+        return sPattern`${this}`;
     });
 
     /**
