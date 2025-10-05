@@ -1,6 +1,5 @@
 import { re } from '../repart';
 import {word, num, w} from '../repart/generic';
-import { flagsEqual } from './test-helpers';
 
 describe('Builder Methods', () => {
   describe('.setFlags() method', () => {
@@ -203,17 +202,17 @@ describe('Builder Methods', () => {
   describe('.spaced() method', () => {
     test('should make spaces flexible', () => {
       const pattern = /hello world/.spaced();
-      expect(pattern.source).toBe('hello[^\\S\\r\\n]+world');
+      expect(pattern.source).toBe('hello\\s+world');
     });
 
     test('should handle multiple spaces', () => {
       const pattern = /\d+  \w+/.spaced();
-      expect(pattern.source).toBe('\\d+[^\\S\\r\\n]+\\w+');
+      expect(pattern.source).toBe('\\d+\\s+\\w+');
     });
 
     test('should handle complex patterns', () => {
       const pattern = /\d+ \w+ \d+/.spaced();
-      expect(pattern.source).toBe('\\d+[^\\S\\r\\n]+\\w+[^\\S\\r\\n]+\\d+');
+      expect(pattern.source).toBe('\\d+\\s+\\w+\\s+\\d+');
     });
 
     test('should preserve parsers', () => {
@@ -228,12 +227,12 @@ describe('Builder Methods', () => {
 
     test('should work with other methods', () => {
       const pattern = /\d+ \w+/.spaced().optional();
-      expect(pattern.source).toBe('(\\d+[^\\S\\r\\n]+\\w+)?');
+      expect(pattern.source).toBe('(\\d+\\s+\\w+)?');
     });
 
     test('should handle mixed whitespace', () => {
       const pattern = /\d+\s*\w+ \d+/.spaced();
-      expect(pattern.source).toBe('\\d+\\s*\\w+[^\\S\\r\\n]+\\d+');
+      expect(pattern.source).toBe('\\d+\\s*\\w+\\s+\\d+');
     });
   });
 

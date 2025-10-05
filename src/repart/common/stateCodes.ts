@@ -79,5 +79,5 @@ export interface State {
 
 // Helper: matches either names or codes (test both to keep abbrs case-sensitive)
 export function matchAnyState(input: string): State | null {
-    return STATE_PATTERN.matchAndExtract(input)?.state;
+    return STATE_PATTERN.matchAndExtract(input)?.state ?? null;
 }

@@ -23,7 +23,9 @@ A TypeScript library for building complex regular expressions and parsing struct
 - [Export Reference](#export-reference)
 
 ## [^](#reference) Install
-TODO: add to npm, for now: clone
+```bash
+npm install repart
+```
 
 ## [^](#reference) Quick Start
 ```typescript
