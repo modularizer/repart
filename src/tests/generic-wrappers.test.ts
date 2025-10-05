@@ -21,21 +21,21 @@ describe('Generic Wrappers', () => {
   describe('Triple quote wrappers', () => {
     describe('tripleBacktick', () => {
       test('should match triple backtick delimiters', () => {
-        const pattern = tripleBacktick`code`;
+        const pattern = tripleBacktick`code`.as('tripleBacktick');
         const result = matchAndExtract('```code```', pattern);
         expect(result).not.toBeNull();
         expect(result.tripleBacktick).toBe('code');
       });
 
       test('should work with multiline content', () => {
-        const pattern = tripleBacktick`code`;
+        const pattern = tripleBacktick`code`.as('tripleBacktick');
         const result = matchAndExtract('```\nline1\nline2\n```', pattern);
         expect(result).not.toBeNull();
         expect(result.tripleBacktick).toBe('\nline1\nline2\n');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${tripleBacktick`code`}`;
+        const pattern = re`prefix: ${tripleBacktick`code`.as('tripleBacktick')}`;
         const result = matchAndExtract('prefix: ```code```', pattern);
         expect(result.tripleBacktick).toBe('code');
       });
@@ -43,14 +43,14 @@ describe('Generic Wrappers', () => {
 
     describe('tripleTick', () => {
       test('should match triple single quote delimiters', () => {
-        const pattern = tripleTick`code`;
+        const pattern = tripleTick`code`.as('tripleTick');
         const result = matchAndExtract("'''code'''", pattern);
         expect(result).not.toBeNull();
         expect(result.tripleTick).toBe('code');
       });
 
       test('should work with multiline content', () => {
-        const pattern = tripleTick`code`;
+        const pattern = tripleTick`code`.as('tripleTick');
         const result = matchAndExtract("'''\nline1\nline2\n'''", pattern);
         expect(result).not.toBeNull();
         expect(result.tripleTick).toBe('\nline1\nline2\n');
@@ -59,14 +59,14 @@ describe('Generic Wrappers', () => {
 
     describe('tripleQuotation', () => {
       test('should match triple double quote delimiters', () => {
-        const pattern = tripleQuotation`code`;
+        const pattern = tripleQuotation`code`.as('tripleQuotation');
         const result = matchAndExtract('"""code"""', pattern);
         expect(result).not.toBeNull();
         expect(result.tripleQuotation).toBe('code');
       });
 
       test('should work with multiline content', () => {
-        const pattern = tripleQuotation`code`;
+        const pattern = tripleQuotation`code`.as('tripleQuotation');
         const result = matchAndExtract('"""\nline1\nline2\n"""', pattern);
         expect(result).not.toBeNull();
         expect(result.tripleQuotation).toBe('\nline1\nline2\n');
@@ -75,7 +75,7 @@ describe('Generic Wrappers', () => {
 
     describe('tripleQuote', () => {
       test('should match any triple quote type', () => {
-        const pattern = tripleQuote`code`;
+        const pattern = tripleQuote`code`.as('tripleQuote');
         
         const testCases = [
           '```code```',
@@ -90,7 +90,7 @@ describe('Generic Wrappers', () => {
       });
 
       test('should work with multiline content', () => {
-        const pattern = tripleQuote`code`;
+        const pattern = tripleQuote`code`.as('tripleQuote');
         
         const testCases = [
           '```\nline1\nline2\n```',
@@ -109,14 +109,14 @@ describe('Generic Wrappers', () => {
   describe('Single quote wrappers', () => {
     describe('backtick', () => {
       test('should match single backtick delimiters', () => {
-        const pattern = backtick`code`;
+        const pattern = backtick`code`.as('backtick');
         const result = matchAndExtract('`code`', pattern);
         expect(result).not.toBeNull();
         expect(result.backtick).toBe('code');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${backtick`code`}`;
+        const pattern = re`prefix: ${backtick`code`.as('backtick')}`;
         const result = matchAndExtract('prefix: `code`', pattern);
         expect(result.backtick).toBe('code');
       });
@@ -124,14 +124,14 @@ describe('Generic Wrappers', () => {
 
     describe('tick', () => {
       test('should match single quote delimiters', () => {
-        const pattern = tick`code`;
+        const pattern = tick`code`.as('tick');
         const result = matchAndExtract("'code'", pattern);
         expect(result).not.toBeNull();
         expect(result.tick).toBe('code');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${tick`code`}`;
+        const pattern = re`prefix: ${tick`code`.as('tick')}`;
         const result = matchAndExtract("prefix: 'code'", pattern);
         expect(result.tick).toBe('code');
       });
@@ -139,14 +139,14 @@ describe('Generic Wrappers', () => {
 
     describe('quotation', () => {
       test('should match double quote delimiters', () => {
-        const pattern = quotation`code`;
+        const pattern = quotation`code`.as('quotation');
         const result = matchAndExtract('"code"', pattern);
         expect(result).not.toBeNull();
         expect(result.quotation).toBe('code');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${quotation`code`}`;
+        const pattern = re`prefix: ${quotation`code`.as('quotation')}`;
         const result = matchAndExtract('prefix: "code"', pattern);
         expect(result.quotation).toBe('code');
       });
@@ -154,7 +154,7 @@ describe('Generic Wrappers', () => {
 
     describe('anyQuotation', () => {
       test('should match any quote character', () => {
-        const pattern = anyQuotation;
+        const pattern = anyQuotation.as('anyQuotation');
         const testCases = ['`', "'", '"'];
 
         testCases.forEach(testCase => {
@@ -167,7 +167,7 @@ describe('Generic Wrappers', () => {
 
     describe('quote', () => {
       test('should match any quote-wrapped content', () => {
-        const pattern = quote`code`;
+        const pattern = quote`code`.as('quote');
         const testCases = ['`code`', "'code'", '"code"'];
 
         testCases.forEach(testCase => {
@@ -178,7 +178,7 @@ describe('Generic Wrappers', () => {
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${quote`code`}`;
+        const pattern = re`prefix: ${quote`code`.as('quote')}`;
         const result = matchAndExtract('prefix: `code`', pattern);
         expect(result.quote).toBe('code');
       });
@@ -188,27 +188,27 @@ describe('Generic Wrappers', () => {
   describe('Bracket wrappers', () => {
     describe('parenth / pa', () => {
       test('should match parentheses', () => {
-        const pattern = parenth`content`;
+        const pattern = parenth`content`.as('parenth');
         const result = matchAndExtract('(content)', pattern);
         expect(result).not.toBeNull();
         expect(result.parenth).toBe('content');
       });
 
       test('should work with pa alias', () => {
-        const pattern = pa`content`;
+        const pattern = pa`content`.as('pa');
         const result = matchAndExtract('(content)', pattern);
         expect(result).not.toBeNull();
         expect(result.pa).toBe('content');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${parenth`content`}`;
+        const pattern = re`prefix: ${parenth`content`.as('parenth')}`;
         const result = matchAndExtract('prefix: (content)', pattern);
         expect(result.parenth).toBe('content');
       });
 
       test('should handle nested parentheses', () => {
-        const pattern = parenth`content`;
+        const pattern = parenth`content`.as('parenth');
         const result = matchAndExtract('(outer (inner) content)', pattern);
         expect(result).not.toBeNull();
         expect(result.parenth).toBe('outer (inner) content');
@@ -217,27 +217,27 @@ describe('Generic Wrappers', () => {
 
     describe('squareBracket / sb', () => {
       test('should match square brackets', () => {
-        const pattern = squareBracket`content`;
+        const pattern = squareBracket`content`.as('squareBracket');
         const result = matchAndExtract('[content]', pattern);
         expect(result).not.toBeNull();
         expect(result.squareBracket).toBe('content');
       });
 
       test('should work with sb alias', () => {
-        const pattern = sb`content`;
+        const pattern = sb`content`.as('sb');
         const result = matchAndExtract('[content]', pattern);
         expect(result).not.toBeNull();
         expect(result.sb).toBe('content');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${squareBracket`content`}`;
+        const pattern = re`prefix: ${squareBracket`content`.as('squareBracket')}`;
         const result = matchAndExtract('prefix: [content]', pattern);
         expect(result.squareBracket).toBe('content');
       });
 
       test('should handle nested brackets', () => {
-        const pattern = squareBracket`content`;
+        const pattern = squareBracket`content`.as('squareBracket');
         const result = matchAndExtract('[outer [inner] content]', pattern);
         expect(result).not.toBeNull();
         expect(result.squareBracket).toBe('outer [inner] content');
@@ -246,27 +246,27 @@ describe('Generic Wrappers', () => {
 
     describe('curlyBracket / cb', () => {
       test('should match curly brackets', () => {
-        const pattern = curlyBracket`content`;
+        const pattern = curlyBracket`content`.as('curlyBracket');
         const result = matchAndExtract('{content}', pattern);
         expect(result).not.toBeNull();
         expect(result.curlyBracket).toBe('content');
       });
 
       test('should work with cb alias', () => {
-        const pattern = cb`content`;
+        const pattern = cb`content`.as('cb');
         const result = matchAndExtract('{content}', pattern);
         expect(result).not.toBeNull();
         expect(result.cb).toBe('content');
       });
 
       test('should work in templates', () => {
-        const pattern = re`prefix: ${curlyBracket`content`}`;
+        const pattern = re`prefix: ${curlyBracket`content`.as('curlyBracket')}`;
         const result = matchAndExtract('prefix: {content}', pattern);
         expect(result.curlyBracket).toBe('content');
       });
 
       test('should handle nested brackets', () => {
-        const pattern = curlyBracket`content`;
+        const pattern = curlyBracket`content`.as('curlyBracket');
         const result = matchAndExtract('{outer {inner} content}', pattern);
         expect(result).not.toBeNull();
         expect(result.curlyBracket).toBe('outer {inner} content');
@@ -353,26 +353,26 @@ describe('Generic Wrappers', () => {
 
   describe('Edge cases', () => {
     test('should handle empty content', () => {
-      const pattern = backtick`content`;
+      const pattern = backtick`content`.as('backtick');
       const result = matchAndExtract('``', pattern);
       expect(result.backtick).toBe('');
     });
 
     test('should handle special characters in content', () => {
-      const pattern = quotation`content`;
+      const pattern = quotation`content`.as('quotation');
       const result = matchAndExtract('"hello world!@#$%"', pattern);
       expect(result.quotation).toBe('hello world!@#$%');
     });
 
     test('should handle unicode content', () => {
-      const pattern = backtick`content`;
+      const pattern = backtick`content`.as('backtick');
       const result = matchAndExtract('`café naïve`', pattern);
       expect(result.backtick).toBe('café naïve');
     });
 
     test('should handle very long content', () => {
       const longContent = 'a'.repeat(1000);
-      const pattern = parenth`content`;
+      const pattern = parenth`content`.as('parenth');
       const result = matchAndExtract(`(${longContent})`, pattern);
       expect(result.parenth).toBe(longContent);
     });
@@ -380,19 +380,19 @@ describe('Generic Wrappers', () => {
 
   describe('Nested scenarios', () => {
     test('should handle nested quotes', () => {
-      const pattern = quotation`content`;
+      const pattern = quotation`content`.as('quotation');
       const result = matchAndExtract('"He said \\"hello\\" to me"', pattern);
       expect(result.quotation).toBe('He said "hello" to me');
     });
 
     test('should handle nested brackets', () => {
-      const pattern = parenth`content`;
+      const pattern = parenth`content`.as('parenth');
       const result = matchAndExtract('(outer (inner) content)', pattern);
       expect(result.parenth).toBe('outer (inner) content');
     });
 
     test('should handle mixed nesting', () => {
-      const pattern = re`${quotation`content`}`;
+      const pattern = re`${quotation`content`.as('quotation')}`;
       const result = matchAndExtract('"(data [item])"', pattern);
       expect(result.quotation).toBe('(data [item])');
     });
@@ -401,7 +401,7 @@ describe('Generic Wrappers', () => {
   describe('Performance', () => {
     test('should handle large content efficiently', () => {
       const largeContent = 'x'.repeat(10000);
-      const pattern = tripleBacktick`content`;
+      const pattern = tripleBacktick`content`.as('tripleBacktick');
       const result = matchAndExtract(`\`\`\`${largeContent}\`\`\``, pattern);
       expect(result.tripleBacktick).toBe(largeContent);
     });
@@ -412,7 +412,7 @@ describe('Generic Wrappers', () => {
         nested = `(${nested})`;
       }
       
-      const pattern = parenth`content`;
+      const pattern = parenth`content`.as('parenth');
       const result = matchAndExtract(nested, pattern);
       expect(result.parenth).toBe(nested.slice(1, -1));
     });

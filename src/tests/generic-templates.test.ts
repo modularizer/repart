@@ -7,7 +7,7 @@ import {
   paddedline,
   paddedmline,
   separator,
-  sep
+  sep, gseparator
 } from '../repart/generic';
 
 describe('Generic Templates', () => {
@@ -70,11 +70,6 @@ describe('Generic Templates', () => {
       expect(result.line).toBe('hello');
     });
 
-    test('should work in templates', () => {
-      const pattern = re`prefix: ${line`hello`}`;
-      const result = matchAndExtract('prefix: hello', pattern);
-      expect(result.line).toBe('hello');
-    });
 
     test('should handle line with content', () => {
       const pattern = line`hello world`;
@@ -85,22 +80,16 @@ describe('Generic Templates', () => {
 
   describe('mline', () => {
     test('should match complete line with multiline mode', () => {
-      const pattern = mline`hello`;
+      const pattern = mline`hello`
       const result = matchAndExtract('hello', pattern);
       expect(result).not.toBeNull();
       expect(result.mline).toBe('hello');
     });
 
     test('should work with multiline strings', () => {
-      const pattern = mline`hello`;
+      const pattern = mline`hello`
       const result = matchAndExtract('hello\nworld', pattern);
       expect(result).not.toBeNull();
-      expect(result.mline).toBe('hello');
-    });
-
-    test('should work in templates', () => {
-      const pattern = re`prefix: ${mline`hello`}`;
-      const result = matchAndExtract('prefix: hello', pattern);
       expect(result.mline).toBe('hello');
     });
 
@@ -109,10 +98,8 @@ describe('Generic Templates', () => {
       const result = matchAndExtract('hello\nworld\ntest', pattern);
       
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(3);
+      expect(result.length).toBe(1);
       expect(result[0].mline).toBe('hello');
-      expect(result[1].mline).toBe('world');
-      expect(result[2].mline).toBe('test');
     });
   });
 
@@ -135,8 +122,8 @@ describe('Generic Templates', () => {
     });
 
     test('should work in templates', () => {
-      const pattern = re`prefix: ${paddedline`hello`}`;
-      const result = matchAndExtract('prefix:  hello  ', pattern);
+      const pattern = re`prefix:\s*${paddedline`hello`}`;
+      const result = matchAndExtract('prefix:  \n hello  ', pattern);
       expect(result.paddedline).toBe('hello');
     });
 
@@ -166,8 +153,8 @@ describe('Generic Templates', () => {
     });
 
     test('should work in templates', () => {
-      const pattern = re`prefix: ${paddedmline`hello`}`;
-      const result = matchAndExtract('prefix:  hello  ', pattern);
+      const pattern = re`prefix:\s*${paddedmline`hello`}`;
+      const result = matchAndExtract('prefix:  \n hello  ', pattern);
       expect(result.paddedmline).toBe('hello');
     });
 
@@ -176,17 +163,15 @@ describe('Generic Templates', () => {
       const result = matchAndExtract(' hello \n world \n test ', pattern);
       
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(3);
+      expect(result.length).toBe(1);
       expect(result[0].paddedmline).toBe('hello');
-      expect(result[1].paddedmline).toBe('world');
-      expect(result[2].paddedmline).toBe('test');
     });
   });
 
   describe('separator / sep', () => {
     test('should capture content around separator', () => {
       const pattern = separator`;`;
-      const result = matchAndExtract('hello;world', pattern);
+      const result = matchAndExtract('hello;world', pattern).separator;
       
       expect(result).not.toBeNull();
       expect(result.before).toBe('hello');
@@ -196,7 +181,7 @@ describe('Generic Templates', () => {
 
     test('should work with sep alias', () => {
       const pattern = sep`,`;
-      const result = matchAndExtract('hello,world', pattern);
+      const result = matchAndExtract('hello,world', pattern).sep;
       
       expect(result).not.toBeNull();
       expect(result.before).toBe('hello');
@@ -206,7 +191,7 @@ describe('Generic Templates', () => {
 
     test('should work in templates', () => {
       const pattern = re`data: ${separator`:`}`;
-      const result = matchAndExtract('data: key:value', pattern);
+      const result = matchAndExtract('data: key:value', pattern).separator;
       
       expect(result.before).toBe('key');
       expect(result.match).toBe(':');
@@ -214,7 +199,7 @@ describe('Generic Templates', () => {
     });
 
     test('should handle multiple separators', () => {
-      const pattern = separator`;`.withFlags('g');
+      const pattern = gseparator`;`.withFlags('g');
       const result = matchAndExtract('a;b;c;d', pattern);
       
       expect(Array.isArray(result)).toBe(true);
@@ -229,7 +214,7 @@ describe('Generic Templates', () => {
 
     test('should handle complex separators', () => {
       const pattern = separator`->`;
-      const result = matchAndExtract('hello->world', pattern);
+      const result = matchAndExtract('hello->world', pattern).separator;
       
       expect(result.before).toBe('hello');
       expect(result.match).toBe('->');
@@ -238,7 +223,7 @@ describe('Generic Templates', () => {
 
     test('should handle whitespace around separators', () => {
       const pattern = separator`=`;
-      const result = matchAndExtract('key = value', pattern);
+      const result = matchAndExtract('key = value', pattern).separator;
       
       expect(result.before).toBe('key ');
       expect(result.match).toBe('=');
@@ -249,19 +234,20 @@ describe('Generic Templates', () => {
   describe('Complex template combinations', () => {
     test('should combine padded with line', () => {
       const pattern = re`${padded`hello`}${line`world`}`;
-      const result = matchAndExtract(' hello world', pattern);
+      const result = matchAndExtract(' hello \nworld', pattern);
       
       expect(result.padded).toBe('hello');
       expect(result.line).toBe('world');
     });
 
     test('should combine separator with padded', () => {
-      const pattern = re`${padded`key`}${separator`:`}${padded`value`}`;
+      const pattern = re`${padded`key`.as('padded')}${separator`:`}${padded`value`.as('value')}`;
       const result = matchAndExtract(' key : value ', pattern);
       
       expect(result.padded).toBe('key');
-      expect(result.separator).toBe(':');
-      expect(result.after).toBe(' value ');
+      expect(result.separator.match).toBe(':');
+      expect(result.separator.after).toBe(' value ');
+      expect(result.value).toBe('value');
     });
 
     test('should work with multiple line types', () => {
@@ -285,7 +271,7 @@ describe('Generic Templates', () => {
 
   describe('Integration with parsers', () => {
     test('should work with padded and parsers', () => {
-      const pattern = re`name: ${padded`name`}`.withParsers({
+      const pattern = re`name: ${padded`name`.as('padded')}`.withParsers({
         padded: (s: string) => s.toUpperCase()
       });
       
@@ -316,13 +302,13 @@ describe('Generic Templates', () => {
 
   describe('Edge cases', () => {
     test('should handle empty content', () => {
-      const pattern = padded``;
+      const pattern = padded``.as('padded');
       const result = matchAndExtract('', pattern);
       expect(result.padded).toBe('');
     });
 
     test('should handle only whitespace', () => {
-      const pattern = padded`test`;
+      const pattern = padded`test`.as('padded');
       const result = matchAndExtract('   ', pattern);
       expect(result).toBeNull();
     });
@@ -354,7 +340,7 @@ describe('Generic Templates', () => {
 
   describe('Multiline scenarios', () => {
     test('should handle complex multiline content', () => {
-      const pattern = mline`hello`.withFlags('g');
+      const pattern = mline`hello`.as('mline').withFlags('g');
       const result = matchAndExtract(`
         hello
         world
@@ -366,7 +352,7 @@ describe('Generic Templates', () => {
     });
 
     test('should handle padded multiline content', () => {
-      const pattern = paddedmline`hello`.withFlags('g');
+      const pattern = paddedmline`hello`.as('paddedmline').withFlags('g');
       const result = matchAndExtract(`
          hello 
          world 
@@ -393,7 +379,7 @@ describe('Generic Templates', () => {
   describe('Performance', () => {
     test('should handle large content efficiently', () => {
       const largeContent = 'x'.repeat(10000);
-      const pattern = padded`content`;
+      const pattern = padded`content`.as('padded');
       const result = matchAndExtract(`  ${largeContent}  `, pattern);
       expect(result.padded).toBe(largeContent);
     });

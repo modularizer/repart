@@ -3,7 +3,7 @@
  * This module extends the native RegExp prototype with additional methods
  * for flag manipulation and parser management.
  */
-import {addFlags, RegExpFlags, removeFlags, withFlags} from "./flags"; // good, no add to prototype deps
+import {RegExpFlags, removeFlags, setFlags, withFlags} from "./flags"; // good, no add to prototype deps
 import {asString, re, templateGroup} from "./core"; // good, no add to prototype deps
 import {escape} from "./special"; // good, no add to prototype deps
 import {Parsers, withParsers, matchRaw, matchAndExtract, Result, RawResult, Extracted} from "./match";
@@ -22,7 +22,7 @@ declare global {
     interface RegExp {
         /** Custom parsers for processing matched groups */
         parsers: Parsers<string> | undefined;
-        /** Creates a new RegExp with specified flags, replacing existing ones
+        /** Creates a new RegExp with specified flags, adding to existing ones
          *
          * @example
          * re`^something&`.withFlags('gm')
@@ -39,13 +39,22 @@ declare global {
          * */
         withFlags(flags?: RegExpFlags): RegExp;
 
-        /** Creates a new RegExp with additional flags added to existing ones
+        /** Creates a new RegExp with specified flags, replacing existing ones
          *
          * @example
-         * re`^something&`.addFlags('gm')
+         * re`^something&`.setFlags('gm')
+         *
+         * @example
+         * g: "Global search (find all matches, not just the first)",
+         * i: "Ignore case (case-insensitive match)",
+         * m: "Multiline (treat ^ and $ as start/end of each line)",
+         * s: "Dotall (dot `.` matches newlines too)",
+         * u: "Unicode (treat pattern as a sequence of Unicode code points)",
+         * y: "Sticky (match only from lastIndex position in the target string)",
+         * d: "hasIndices"
          *
          * */
-        addFlags(flags?: RegExpFlags): RegExp;
+        setFlags(flags?: RegExpFlags): RegExp;
 
         /**
          * Wraps the current RegExp in a named group or special group type.
@@ -71,7 +80,74 @@ declare global {
          */
         as(name: string | special, wrap?: boolean): RegExp;
 
-        template(name?: string): RegExp;
+
+        /**
+         * Adds anchors to the current RegExp pattern.
+         * Creates a new RegExp with start/end anchors (^/$) added to control matching boundaries.
+         * 
+         * @param mode - The anchor mode to apply:
+         *   - **'^'** or **'start'**: Add start anchor (^) only
+         *   - **'$'** or **'end'**: Add end anchor ($) only  
+         *   - **'^$'** or **'both'**: Add both start and end anchors (default)
+         * @param multiline - Whether to add/keep multiline flag (m) for line-based matching
+         * @returns A new RegExp with the specified anchors added
+         * 
+         * @example
+         * // Add both anchors (default behavior)
+         * const pattern = /\d+/.anchor(); // /^\d+$/
+         * 
+         * @example
+         * // Add only start anchor
+         * const startOnly = /\d+/.anchor('start'); // /^\d+/
+         * 
+         * @example
+         * // Add only end anchor  
+         * const endOnly = /\d+/.anchor('end'); // /\d+$/
+         * 
+         * @example
+         * // Add anchors with multiline mode
+         * const multilinePattern = /\d+/.anchor('both', true); // /^\d+$/m
+         * 
+         * @example
+         * // Chain with other methods
+         * const complex = /\d+/.as('number').anchor('both').withFlags('i'); // /^(?<number>\d+)$/i
+         */
+        anchor(mode?: '^' | 'start' | '$' | 'end' | '^$' | 'both', multiline?: boolean): RegExp;
+
+        /**
+         * Removes anchors from the current RegExp pattern.
+         * Creates a new RegExp with start/end anchors (^/$) removed to allow partial matching.
+         * 
+         * @param mode - The anchor mode to remove:
+         *   - **'^'** or **'start'**: Remove start anchor (^) only
+         *   - **'$'** or **'end'**: Remove end anchor ($) only
+         *   - **'^$'** or **'both'**: Remove both start and end anchors (default)
+         * @param removeMultiline - Whether to remove multiline flag (m) when removing anchors
+         * @returns A new RegExp with the specified anchors removed
+         * 
+         * @example
+         * // Remove both anchors (default behavior)
+         * const pattern = /^\d+$/.unanchor(); // /\d+/
+         * 
+         * @example
+         * // Remove only start anchor
+         * const noStart = /^\d+$/.unanchor('start'); // /\d+$/
+         * 
+         * @example
+         * // Remove only end anchor
+         * const noEnd = /^\d+$/.unanchor('end'); // /^\d+/
+         * 
+         * @example
+         * // Remove anchors and multiline flag
+         * const noMultiline = /^\d+$/m.unanchor('both', true); // /\d+/
+         * 
+         * @example
+         * // Chain with other methods
+         * const flexible = /^(?<number>\d+)$/.unanchor().then('\\s*'); // /(?<number>\d+)\s* /
+         */
+        unanchor(mode?: '^' | 'start' | '$' | 'end' | '^$' | 'both', removeMultiline?: boolean): RegExp;
+
+        template(name?: string, groupsParser?: (g: any) => any): RegExp;
 
         /** Creates a new RegExp with specified flags removed from existing ones */
         removeFlags(flags?: RegExpFlags): RegExp;
@@ -341,8 +417,8 @@ export function addToPrototype() {
     def('withFlags', function (this: RegExp, flags?: RegExpFlags) {
         return withFlags(this, flags);
     });
-    def('addFlags', function (this: RegExp, flags?: RegExpFlags) {
-        return addFlags(this, flags);
+    def('setFlags', function (this: RegExp, flags?: RegExpFlags) {
+        return setFlags(this, flags);
     });
     def('removeFlags', function (this: RegExp, flags?: RegExpFlags) {
         return removeFlags(this, flags);
@@ -358,8 +434,8 @@ export function addToPrototype() {
         return as(this, name, wrap);
     });
 
-    def('template', function (this: RegExp, name?: string) {
-        return templateGroup(this, name);
+    def('template', function (this: RegExp, name?: string, groupsParser?: (g: any) => any) {
+        return templateGroup(this, name, groupsParser);
     });
 
     /**
@@ -448,6 +524,52 @@ export function addToPrototype() {
     def('matchAndExtract', function (this: RegExp, input: string, options: any = {}) {
         return matchAndExtract(input, this, options);
     });
+
+    /**
+     * Implementation of the 'anchor' method - adds anchors to control matching boundaries.
+     * Intelligently adds start (^) and/or end ($) anchors to the pattern source,
+     * optionally managing the multiline flag for line-based matching.
+     */
+    def('anchor', function (this: RegExp, mode: '^' | 'start' | '$' | 'end' | '^$' | 'both' = 'both', multiline?: boolean) {
+        if (!(["^", "start", "$", "end", "^$", "both"]).includes(mode)){throw new Error("invalid mode")}
+        const p = this.parsers ?? {};
+        let f = this.flags ?? '';
+        let s = this.source;
+        if ((multiline ?? false) && !f.includes("m")){f += "m"}
+        if (!(multiline ?? true)){f = Array.from(f).filter(v=>v!='m').join()}
+        if (['^', 'start', "^$", 'both'].includes(mode) && !s.startsWith('^')){
+            s = '^' + s;
+        }
+        if (["$", "end", "^$", "both"].includes(mode) && !s.endsWith('$')){
+            s += '$';
+        }
+        const r = new RegExp(s, f);
+        r.parsers = p;
+        return r;
+    });
+
+    /**
+     * Implementation of the 'unanchor' method - removes anchors to allow partial matching.
+     * Intelligently removes start (^) and/or end ($) anchors from the pattern source,
+     * optionally managing the multiline flag when removing anchors.
+     */
+    def('unanchor', function (this: RegExp, mode: '^' | 'start' | '$' | 'end' | '^$' | 'both' = 'both', removeMultiline: boolean = false) {
+        if (!(["^", "start", "$", "end", "^$", "both"]).includes(mode)){throw new Error("invalid mode")}
+        const p = this.parsers ?? {};
+        let f = this.flags ?? '';
+        let s = this.source;
+        if (removeMultiline){f = Array.from(f).filter(v=>v!='m').join()}
+        if (['^', 'start', "^$", 'both'].includes(mode) && s.startsWith('^')) {
+            s = s.slice(1)
+        }
+        if (["$", "end", "^$", "both"].includes(mode) && s.endsWith('$')){
+            s = s.slice(0, s.length - 1);
+        }
+        const r = new RegExp(s, f);
+        r.parsers = p;
+        return r;
+    });
+
 
     /**
      * Implementation of the 'info' getter - returns GroupInfo object for pattern analysis.

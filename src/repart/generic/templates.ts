@@ -3,7 +3,8 @@
  * These functions provide convenient shortcuts for common regex operations.
  */
 import {re, stack} from "../core";
-import {any, anything, endLine, space, startLine} from "./patterns";
+import {any, anything, endLine, newLine, space, startLine} from "./patterns";
+import {lookahead, negativeLookahead} from "./groups";
 
 
 
@@ -19,11 +20,14 @@ import {any, anything, endLine, space, startLine} from "./patterns";
  * const pattern = padded`(?<word>.*)`; // matches with all spaces (\s*) before and after
 */
 export function padded(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`\s*${re(strings, ...vals)}\s*`;
+    return re`(?:\s*)(?<content>${re(strings, ...vals)})(?:\s*)`.template("padded", (g: any) => g.content);
 }
 
+
 /** Alias for the padded function - provides a shorter name for convenience */
-export const p = padded;
+export function p(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    return padded(strings, ...vals).as('p')
+}
 
 /**
  * Creates a RegExp that matches a complete line using multiline mode.
@@ -38,7 +42,7 @@ export const p = padded;
  * const pattern = mline`hello`; // /^hello$/m
  */
 export function mline(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`^${re(strings, ...vals)}$`.addFlags('m')
+    return re`(?:^)(?<content>${re(strings, ...vals)})(?:$)`.withFlags('m').template("mline", (g: any) => g.content)
 }
 
 /**
@@ -48,7 +52,9 @@ export function mline(strings: TemplateStringsArray, ...vals: Array<string | num
  * @example
  * const pattern = paddedmline`hello`;
 */
-export const paddedmline = stack(mline, p);
+export function paddedmline(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    return re`(?:^)\s*(?<content>${re(strings, ...vals)})\s*(?:$)`.withFlags('m').template("paddedmline", (g: any) => g.content)
+}
 
 /**
  * Creates a RegExp that matches a complete line without using multiline mode.
@@ -62,7 +68,7 @@ export const paddedmline = stack(mline, p);
  * const pattern = line`hello`; // Uses startLine and endLine patterns
  */
 export function line(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return re`${startLine}${re(strings, ...vals)}\s*${endLine}`;
+    return re`(?:^|\n)(?<content>${re(strings, ...vals)})\s*(?:(?:(?:${newLine})|$))`.template("line",  (g: any) => g.content);
 }
 
 /**
@@ -72,7 +78,9 @@ export function line(strings: TemplateStringsArray, ...vals: Array<string | numb
  * @example
  * const pattern = paddedline`hello`; // Padded version of line matching
  */
-export const paddedline = stack(line, padded);
+export function paddedline(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    return re`(?:^|\n)\s*(?<content>${re(strings, ...vals)})\s*(?:(?:(?:${newLine})|$))`.template("paddedline", g => g.content);
+}
 
 
 
@@ -91,8 +99,21 @@ export const paddedline = stack(line, padded);
  * // Groups: before, match, after
  */
 export function separator(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
-    return  re`(?<before>${any}*?)(?<match>${re(strings, ...vals)})(?<after>${any}*)`
+    const pat = re(strings, ...vals);
+    return  re`(?<before>${any}*?)(?<match>${pat})(?<after>${any}*)`.template('separator')
+}
+
+
+export function gseparator(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    const pat = re(strings, ...vals);
+    return re`(?<before>${any}*?)(?<match>${pat})(?=(?<after>${any}*?)(?=${pat}|$))`.withFlags('g')
 }
 
 /** Alias for the separator function - provides a shorter name for convenience */
-export const sep = separator;
+export function sep(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+    return  separator(strings, ...vals).as('sep')
+}
+
+export function gsep(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
+   return gseparator(strings, ...vals)
+}

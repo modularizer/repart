@@ -270,6 +270,192 @@ describe('Core Features', () => {
     });
   });
 
+  describe('.anchor() method', () => {
+    test('should add both anchors by default', () => {
+      const pattern = /\d+/.anchor();
+      expect(pattern.source).toBe('^\\d+$');
+    });
+
+    test('should add start anchor only', () => {
+      const pattern = /\d+/.anchor('start');
+      expect(pattern.source).toBe('^\\d+');
+      
+      const pattern2 = /\d+/.anchor('^');
+      expect(pattern2.source).toBe('^\\d+');
+    });
+
+    test('should add end anchor only', () => {
+      const pattern = /\d+/.anchor('end');
+      expect(pattern.source).toBe('\\d+$');
+      
+      const pattern2 = /\d+/.anchor('$');
+      expect(pattern2.source).toBe('\\d+$');
+    });
+
+    test('should add both anchors explicitly', () => {
+      const pattern = /\d+/.anchor('both');
+      expect(pattern.source).toBe('^\\d+$');
+      
+      const pattern2 = /\d+/.anchor('^$');
+      expect(pattern2.source).toBe('^\\d+$');
+    });
+
+    test('should handle multiline flag', () => {
+      const pattern = /\d+/.anchor('both', true);
+      expect(pattern.source).toBe('^\\d+$');
+      expect(pattern.flags).toContain('m');
+    });
+
+    test('should not duplicate existing anchors', () => {
+      const pattern = /^\d+$/.anchor();
+      expect(pattern.source).toBe('^\\d+$');
+      
+      const startOnly = /^\d+/.anchor('start');
+      expect(startOnly.source).toBe('^\\d+');
+      
+      const endOnly = /\d+$/.anchor('end');
+      expect(endOnly.source).toBe('\\d+$');
+    });
+
+    test('should preserve parsers', () => {
+      const originalPattern = /\d+/.as('number').withParsers({ number: parseInt });
+      const anchoredPattern = originalPattern.anchor();
+      expect((anchoredPattern as any).parsers).toHaveProperty('number');
+    });
+
+    test('should work with named groups', () => {
+      const pattern = /\d+/.as('number').anchor();
+      expect(pattern.source).toBe('^(?<number>\\d+)$');
+    });
+
+    test('should chain with other methods', () => {
+      const pattern = /\d+/.anchor().withFlags('i');
+      expect(pattern.source).toBe('^\\d+$');
+      expect(pattern.flags).toContain('i');
+    });
+
+    test('should handle complex patterns', () => {
+      const pattern = re`${/\d+/.as('id')}\\s*${/\w+/.as('name')}`.anchor();
+      expect(pattern.source).toBe('^(?<id>\\d+)\\\\s*(?<name>\\w+)$');
+    });
+
+    test('should throw error for invalid mode', () => {
+      expect(() => /\d+/.anchor('invalid' as any)).toThrow('invalid mode');
+    });
+  });
+
+  describe('.unanchor() method', () => {
+    test('should remove both anchors by default', () => {
+      const pattern = /^\d+$/.unanchor();
+      expect(pattern.source).toBe('\\d+');
+    });
+
+    test('should remove start anchor only', () => {
+      const pattern = /^\d+$/.unanchor('start');
+      expect(pattern.source).toBe('\\d+$');
+      
+      const pattern2 = /^\d+$/.unanchor('^');
+      expect(pattern2.source).toBe('\\d+$');
+    });
+
+    test('should remove end anchor only', () => {
+      const pattern = /^\d+$/.unanchor('end');
+      expect(pattern.source).toBe('^\\d+');
+      
+      const pattern2 = /^\d+$/.unanchor('$');
+      expect(pattern2.source).toBe('^\\d+');
+    });
+
+    test('should remove both anchors explicitly', () => {
+      const pattern = /^\d+$/.unanchor('both');
+      expect(pattern.source).toBe('\\d+');
+      
+      const pattern2 = /^\d+$/.unanchor('^$');
+      expect(pattern2.source).toBe('\\d+');
+    });
+
+    test('should handle multiline flag removal', () => {
+      const pattern = /^\d+$/m.unanchor('both', true);
+      expect(pattern.source).toBe('\\d+');
+      expect(pattern.flags).not.toContain('m');
+    });
+
+    test('should not affect patterns without anchors', () => {
+      const pattern = /\d+/.unanchor();
+      expect(pattern.source).toBe('\\d+');
+      
+      const startOnly = /^\d+/.unanchor('end');
+      expect(startOnly.source).toBe('^\\d+');
+      
+      const endOnly = /\d+$/.unanchor('start');
+      expect(endOnly.source).toBe('\\d+$');
+    });
+
+    test('should preserve parsers', () => {
+      const originalPattern = /^\d+$/.as('number').withParsers({ number: parseInt });
+      const unanchoredPattern = originalPattern.unanchor();
+      expect((unanchoredPattern as any).parsers).toHaveProperty('number');
+    });
+
+    test('should work with named groups', () => {
+      const pattern = /^(?<number>\d+)$/.unanchor();
+      expect(pattern.source).toBe('(?<number>\\d+)');
+    });
+
+    test('should chain with other methods', () => {
+      const pattern = /^\d+$/.unanchor().then('\\s*');
+      expect(pattern.source).toBe('\\d+\\s*');
+    });
+
+    test('should handle complex patterns', () => {
+      const pattern = re`^${/\d+/.as('id')}\\s*${/\w+/.as('name')}$`.unanchor();
+      expect(pattern.source).toBe('(?<id>\\d+)\\\\s*(?<name>\\w+)');
+    });
+
+    test('should throw error for invalid mode', () => {
+      expect(() => /^\d+$/.unanchor('invalid' as any)).toThrow('invalid mode');
+    });
+  });
+
+  describe('Anchor/Unanchor integration', () => {
+    test('should be reversible operations', () => {
+      const original = /\d+/;
+      const anchored = original.anchor();
+      const unanchored = anchored.unanchor();
+      
+      expect(unanchored.source).toBe(original.source);
+    });
+
+    test('should work with partial anchoring', () => {
+      const pattern = /\d+/.anchor('start').unanchor('end');
+      expect(pattern.source).toBe('^\\d+');
+      
+      const pattern2 = /\d+/.anchor('end').unanchor('start');
+      expect(pattern2.source).toBe('\\d+$');
+    });
+
+    test('should handle multiline flag correctly', () => {
+      const pattern = /\d+/.anchor('both', true).unanchor('both', true);
+      expect(pattern.source).toBe('\\d+');
+      expect(pattern.flags).not.toContain('m');
+    });
+
+    test('should work with matching operations', () => {
+      const anchoredPattern = /\d+/.anchor();
+      const result = anchoredPattern.match('123');
+      expect(result.extracted).toBe('123');
+      
+      const noMatch = anchoredPattern.match('abc123def');
+      expect(noMatch.extracted).toBeNull();
+    });
+
+    test('should work with unanchored matching', () => {
+      const unanchoredPattern = /^\d+$/.unanchor();
+      const result = unanchoredPattern.match('abc123def');
+      expect(result.extracted).toBe('123');
+    });
+  });
+
   describe('Complex scenarios', () => {
     test('should handle email parsing with nested groups', () => {
       const pattern = re`name: ${word.as('name')}, email: ${EMAIL_PATTERN}`.withParsers({

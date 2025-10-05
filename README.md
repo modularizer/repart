@@ -64,8 +64,10 @@ console.log(sInd, eInd, input.slice(sInd, eInd)); // 28 42 john@gmail.com
 - **how?** - just make a func with this signature `(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) => RegExp`
 
 **Builder methods** added to RegExp can be called on ANY RegExp, made in any way...
-- [.withFlags(flags)](#withflags) - Replace flags: `/hello/i.withFlags('g')` → `/hello/g`, see also [addFlags](#addflags) and [removeFlags](#removeflags)
+- [.withFlags(flags)](#withflags) - Add flags: `/hello/i.withFlags('g')` → `/hello/g`, see also [setFlags](#setflags) and [removeFlags](#removeflags)
 - [.as(name)](#as) - Wrap in group: `/\d+/.as('number')` → `/(?<number>\d+)/`
+- [.anchor(mode?, multiline?)](#anchor) - Add anchors: `/\d+/.anchor()` → `/^\d+$/`, `/\d+/.anchor('start')` → `/^\d+/`
+- [.unanchor(mode?, removeMultiline?)](#unanchor) - Remove anchors: `/^\d+$/.unanchor()` → `/\d+/`, `/^\d+$/.unanchor('start')` → `/\d+$/`
 - [.wrappedWith(before, after?)](#wrappedwith) - Wrap a regexp: `/word/.wrappedWith('"')` → `/"word"/` or `/word/.wrappedWith('1 ', '2')` → `/1 word 2 "/`
 - [.then(after)](#then) - Concatenate: `/\d+/.then('\\s*')` → `/\d+\s* /`
 - [.optional()](#optional) - Make optional: `/\d+/.optional()` → `/\d+?/`
@@ -273,7 +275,7 @@ const complex = /\d+/.as('id').then('\\s*').as('spaced'); // (?<spaced>(?<id>\d+
 
 ---
 ### `.withFlags(flags)`
-Replace all flags with new ones.
+Add more flags
 
 **Available Flags:**
 - `'g'` - Global (find all matches)
@@ -292,15 +294,15 @@ const pattern = /hello/i.withFlags('g'); // /hello/g
 const multiFlag = /test/.withFlags('gi'); // /test/gi
 
 // Remove all flags
-const noFlags = /pattern/gi.withFlags(''); // /pattern/
+const noFlags = /pattern/gi.setFlags(''); // /pattern/
 
 // With RegExp objects
-const complex = re`${/\d+/i}${/\w+/g}`.withFlags('m'); // Combines child flags then replaces
+const complex = re`${/\d+/i}${/\w+/g}`.withFlags('m'); // Combines child flags then adds the m flag
 ```
 
 ---
-### `.addFlags(flags)`
-Add flags to existing RegExp without removing existing ones.
+### `.setFlags(flags)`
+Replace the flags with a new group of flags
 
 ---
 ### `.removeFlags(flags)`
@@ -348,6 +350,79 @@ const multiPattern = re`(?<id>\d+):(?<name>\w+):(?<score>\d+)`.withParsers({
 ```
 
 ---
+### `.anchor(mode?, multiline?)`
+Add anchors to control matching boundaries.
+
+**Key Features:**
+- Adds start (^) and/or end ($) anchors to the pattern
+- Controls whether the pattern must match the entire string or can match partial content
+- Optionally manages the multiline flag for line-based matching
+- Preserves parsers from original RegExp
+
+**Anchor Modes:**
+- `'^'` or `'start'` - Add start anchor only
+- `'$'` or `'end'` - Add end anchor only  
+- `'^$'` or `'both'` - Add both anchors (default)
+
+```typescript
+// Add both anchors (default behavior)
+const pattern = /\d+/.anchor(); // /^\d+$/
+
+// Add only start anchor
+const startOnly = /\d+/.anchor('start'); // /^\d+/
+
+// Add only end anchor  
+const endOnly = /\d+/.anchor('end'); // /\d+$/
+
+// Add anchors with multiline mode
+const multilinePattern = /\d+/.anchor('both', true); // /^\d+$/m
+
+// Chain with other methods
+const complex = /\d+/.as('number').anchor('both').withFlags('i'); // /^(?<number>\d+)$/i
+
+// Matching behavior
+const anchoredPattern = /\d+/.anchor();
+anchoredPattern.match('123'); // ✅ Matches
+anchoredPattern.match('abc123def'); // ❌ No match (anchored)
+```
+
+---
+### `.unanchor(mode?, removeMultiline?)`
+Remove anchors to allow partial matching.
+
+**Key Features:**
+- Removes start (^) and/or end ($) anchors from the pattern
+- Allows the pattern to match partial content within larger strings
+- Optionally manages the multiline flag when removing anchors
+- Preserves parsers from original RegExp
+
+**Anchor Modes:**
+- `'^'` or `'start'` - Remove start anchor only
+- `'$'` or `'end'` - Remove end anchor only
+- `'^$'` or `'both'` - Remove both anchors (default)
+
+```typescript
+// Remove both anchors (default behavior)
+const pattern = /^\d+$/.unanchor(); // /\d+/
+
+// Remove only start anchor
+const noStart = /^\d+$/.unanchor('start'); // /\d+$/
+
+// Remove only end anchor
+const noEnd = /^\d+$/.unanchor('end'); // /^\d+/
+
+// Remove anchors and multiline flag
+const noMultiline = /^\d+$/m.unanchor('both', true); // /\d+/
+
+// Chain with other methods
+const flexible = /^(?<number>\d+)$/.unanchor().then('\\s*'); // /(?<number>\d+)\s*/
+
+// Matching behavior
+const unanchoredPattern = /^\d+$/.unanchor();
+unanchoredPattern.match('abc123def'); // ✅ Matches "123"
+unanchoredPattern.match('123'); // ✅ Matches "123"
+```
+
 ### `.wrappedWith(before, after?)`
 Wrap pattern with delimiters.
 

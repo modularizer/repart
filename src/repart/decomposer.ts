@@ -264,32 +264,17 @@ export class GroupInfo {
             }else{
                 x = 0
             }
+            if (nxt < (i ?? 0)){
+                throw new Error("we shouldn't be going backwards...")
+            }
+
             lastInd = i ?? 0;
             s += src.slice(i ?? 0, nxt);
             i = nxt;
             if (i === src.length){
                 break
-            }else if (i === nextGroupStart){
-                const g = groupsRemaining.shift();
-                if (g) {
-                    if (g.level != level){
-                        level = g.level;
-                        color = getGroupColor(level);
-                        s += color;
-                    }
-
-                    openGroups.push({...g, color});
-                    if (g.type === 'named'){
-                        s += `(?<${C.bold}${g.name}${C.normal}>`;
-                        i = g.cInd;
-                    }else{
-                        s += src.slice(g.sInd, g.cInd);
-                        i = g.cInd;
-                    }
-                }else{
-                    throw new Error("found group start but no group. this should not happen")
-                }
-            }else if (i === nextGroupEnd){
+            }
+            if (i === nextGroupEnd){
                 openGroups.pop();
                 const lastOpen = openGroups[openGroups.length - 1];
                 if ((lastOpen?.level  ?? -1)!== level){
@@ -297,12 +282,36 @@ export class GroupInfo {
                     color = lastOpen?.color ?? C.reset;
                     s += color;
                 }
+            }
+            if (i === nextGroupStart) {
+                const g = groupsRemaining.shift();
+                if (g) {
+                    if (g.level != level) {
+                        level = g.level;
+                        color = getGroupColor(level);
+                        s += color;
+                    }
 
-            }else{
-                throw new Error("not at start or end of a group")
+                    openGroups.push({...g, color});
+                    if (g.type === 'named') {
+                        s += `(?<${C.bold}${g.name}${C.normal}>`;
+                        i = g.cInd;
+                    } else {
+                        s += src.slice(g.sInd, g.cInd);
+                        i = g.cInd;
+                    }
+
+                }
             }
             nextGroupStart = groupsRemaining[0]?.sInd;
             nextGroupEnd = openGroups[openGroups.length - 1]?.qInd;
+        }
+
+
+        const s2 = s.replace(/\x1b\[[0-9;]*m/g, '');
+        if (s2 != src){
+            console.error("put together invalid string")
+            return `${C.reset}${C.red}/${C.reset}${src}${C.red}/${this.flags}${C.reset}`
         }
         return `${C.reset}${C.red}/${C.reset}${s}${C.red}/${this.flags}${C.reset}`
 

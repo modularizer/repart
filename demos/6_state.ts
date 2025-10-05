@@ -1,4 +1,4 @@
-import {matchAndExtract, re} from "../src/repart";
+import {init, matchAndExtract, re} from "../src/repart";
 import {
     aZ,
     EMAIL_PATTERN,
@@ -8,9 +8,22 @@ import {
     STATE_NAME_PATTERN,
     STATE_PATTERN
 } from "../src/repart/common";
-import {anyOf, fullword, lookbehind, noneOf, num, word, wordList} from "../src/repart/generic";
+import {
+    anyOf,
+    fullword, gseparator,
+    line,
+    lookbehind,
+    mline,
+    noneOf,
+    num, padded,
+    paddedline,
+    separator,
+    word,
+    wordList
+} from "../src/repart/generic";
 import {anything} from "../src/repart/generic";
 import {anyWordBut} from "../src/repart/generic/builders";
+init()
 
 // // const result = matchAndExtract('CA', STATE_CODE_PATTERN);
 // // console.log(result);
@@ -32,7 +45,7 @@ import {anyWordBut} from "../src/repart/generic/builders";
 // Email: ${EMAIL_PATTERN},
 // Phone: ${PHONE_NUMBER_PATTERN},
 // State: ${STATE_PATTERN.as('taco')}`.spaced()
-// // console.log(pattern)
+// console.log(pattern)
 //
 // const nestedPattern = re`name: ${word.as('name')}, age: ${num.as('age')}`;
 // const pattern = re`user: ${/.*/.as('userData')}`.withParsers({
@@ -52,8 +65,36 @@ import {anyWordBut} from "../src/repart/generic/builders";
 // const result = matchAndExtract('at the café i was', pattern);
 // const pattern = re`${fullword}${fullword}`;
 // const result = matchAndExtract('hello world', pattern);
-const pattern = re`${re`${aZ}+`.as('word')}${num.as('number')}`;
-const result = matchAndExtract('hello123', pattern);
+// const a = re`hello`.as('line');
+// console.log(a)
+// const p = line`${a}`
+// console.log(p)
+// console.log(p.source)
+// const pattern = re`prefix: ${line`${re`hello`.as('line')}`}`;
+// const result = matchAndExtract('prefix: \nhello', pattern);
+// console.log(pattern)
+
+
+//BAD:
+// console.log(/(a)(?<line>hello)ab/) // /(a)(?<line>hello)(?<line>hello)ab/
+// console.log(/(a)(hello)ab/) // /(a)(hello)(hello)ab/
+// console.log(/(a)(b)(hello)ab/.info) // /(a)(b)(hello)(b)(hello)ab/
+// console.log(/(a)(b)(hello)ab/.info.allGroupDetails) // /(a)(b)(hello)(b)(hello)ab/
+
+
+
+// GOOD:
+// console.log(/(a)(hello)/)
+// console.log(/(hello)ab/)
+// const pattern = mline`${re`hello`.as('mline')}`.withFlags('mg');
+// const result = matchAndExtract('hello\nworld\ntest', pattern);
+// const pattern = re`prefix:\s*(?<a>\d+)\s*${paddedline`hello`.as('paddedline2')}`;
+// const result = matchAndExtract('prefix: 5  \nhello  \n', pattern);
+const pattern = re`${padded`key`}${separator`:`}${padded`value`.as('value')}`;
+const result = matchAndExtract(' key : value ', pattern);
+
+// const pattern = re`prefix: ${line`${re`hello`.as('line')}`}`;
+// const result = matchAndExtract('prefix: \nhello', pattern);
 console.log(pattern)
 // console.log(matchAndExtract('prefix test', pattern))
 // console.log(matchAndExtract('prefix world', pattern))

@@ -81,10 +81,10 @@ export function regexpFlags(flags: RegExpFlags | undefined): string {
  * @returns A new RegExp with the specified flags and preserved parsers
  * 
  * @example
- * withFlags(/abc/i, 'g') // /abc/g
- * withFlags('hello', 'i') // /hello/i
+ * setFlags(/abc/i, 'g') // /abc/g
+ * setFlags('hello', 'i') // /hello/i
  */
-export function withFlags(rx: string | RegExp, flags?: RegExpFlags) {
+export function setFlags(rx: string | RegExp, flags?: RegExpFlags) {
     const oldFlags = (rx instanceof RegExp)?rx.flags:"";
     const src = (rx instanceof RegExp)?rx.source:rx;
     //@ts-ignore
@@ -101,10 +101,10 @@ export function withFlags(rx: string | RegExp, flags?: RegExpFlags) {
  * @returns A new RegExp with combined flags and preserved parsers
  * 
  * @example
- * addFlags(/abc/i, 'g') // /abc/gi
- * addFlags('hello', 'im') // /hello/im
+ * withFlags(/abc/i, 'g') // /abc/gi
+ * withFlags('hello', 'im') // /hello/im
  */
-export function addFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
+export function withFlags(rx: string | number | RegExp, flags?: RegExpFlags) {
     const oldFlags = (rx instanceof RegExp)?rx.flags:"";
     const newFlags = regexpFlags(flags ?? '');
     const reflags = dedup(oldFlags + newFlags);

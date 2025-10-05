@@ -10,7 +10,7 @@ describe('Complex Scenarios', () => {
       const userPattern = re`
         name: ${word.as('name')}, 
         age: ${num.as('age')}, 
-        email: ${EMAIL_PATTERN}
+        email: ${EMAIL_PATTERN.as('email')}
       `.withParsers({
         age: parseInt,
         name: (s: string) => s.toUpperCase()
@@ -170,7 +170,7 @@ describe('Complex Scenarios', () => {
 
   describe('Multiple matches and global patterns', () => {
     test('should handle multiple email extraction', () => {
-      const pattern = re`${EMAIL_PATTERN}`.withFlags('g');
+      const pattern = re`${EMAIL_PATTERN.as('email')}`.withFlags('g');
       const result = matchAndExtract(`
         Contact us at john@example.com or jane@company.org
         For support, email support@help.com
@@ -186,7 +186,7 @@ describe('Complex Scenarios', () => {
     });
 
     test('should handle multiple phone number extraction', () => {
-      const pattern = re`${PHONE_NUMBER_PATTERN}`.withFlags('g');
+      const pattern = re`${PHONE_NUMBER_PATTERN.as('phone')}`.withFlags('g');
       const result = matchAndExtract(`
         Call us at (555) 123-4567 or +1-555-987-6543
         International: +44-20-7946-0958
@@ -296,7 +296,7 @@ describe('Complex Scenarios', () => {
       const pattern = re`
         name: ${word.as('name')}, 
         age: ${num.as('age')}, 
-        email: ${EMAIL_PATTERN}
+        email: ${EMAIL_PATTERN.as('email')}
       `.withParsers({
         name: (s: string) => s.toUpperCase(),
         age: parseInt,
@@ -461,7 +461,7 @@ describe('Complex Scenarios', () => {
       ).join('\n');
 
       const csvPattern = re`
-        ${word.as('name')},${num.as('age')},${EMAIL_PATTERN}
+        ${word.as('name')},${num.as('age')},${EMAIL_PATTERN.as('email')}
       `.withParsers({
         age: parseInt
       });

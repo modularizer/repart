@@ -1,48 +1,48 @@
 import { re } from '../repart';
-import { word, num } from '../repart/generic';
+import {word, num, w} from '../repart/generic';
 import { flagsEqual } from './test-helpers';
 
 describe('Builder Methods', () => {
-  describe('.withFlags() method', () => {
+  describe('.setFlags() method', () => {
     test('should replace all flags', () => {
-      const pattern = /hello/i.withFlags('g');
+      const pattern = /hello/i.setFlags('g');
       expect(pattern.flags).toHaveFlags('gd');
       expect(pattern.flags).not.toContain('i');
     });
 
     test('should handle multiple flags', () => {
-      const pattern = /test/.withFlags('gi');
+      const pattern = /test/.setFlags('gi');
       expect(pattern.flags).toHaveFlags('gid');
     });
 
     test('should remove all flags with empty string', () => {
-      const pattern = /pattern/gi.withFlags('');
+      const pattern = /pattern/gi.setFlags('');
       expect(pattern.flags).toHaveFlags('d');
     });
 
     test('should work with RegExp objects', () => {
       const pattern1 = /\d+/i;
       const pattern2 = /\w+/g;
-      const combined = re`${pattern1}${pattern2}`.withFlags('m');
+      const combined = re`${pattern1}${pattern2}`.setFlags('m');
       expect(combined.flags).toHaveFlags('md');
     });
   });
 
-  describe('.addFlags() method', () => {
+  describe('.withFlags() method', () => {
     test('should add flags without removing existing ones', () => {
-      const pattern = /hello/i.addFlags('g');
+      const pattern = /hello/i.withFlags('g');
       expect(pattern.flags).toHaveFlags('gid');
     });
 
     test('should handle duplicate flags', () => {
-      const pattern = /test/i.addFlags('i');
+      const pattern = /test/i.withFlags('i');
       expect(pattern.flags).toHaveFlags('id');
       // Should not duplicate 'i' flag
       expect(pattern.flags.match(/i/g)).toHaveLength(1);
     });
 
     test('should work with multiple new flags', () => {
-      const pattern = /hello/.addFlags('gi');
+      const pattern = /hello/.withFlags('gi');
       expect(pattern.flags).toHaveFlags('gid');
     });
   });
@@ -267,14 +267,14 @@ describe('Builder Methods', () => {
         .then(/\w+/g)
         .withFlags('m');
       
-      expect(pattern.flags).toHaveFlags('md');
+      expect(pattern.flags).toHaveFlags('dgim');
     });
   });
 
   describe('Integration with re template', () => {
     test('should work with re template interpolation', () => {
       const count = 3;
-      const namePattern = word.as('name');
+      const namePattern = /\w+/.as('name');
       const agePattern = num.as('age');
       
       const pattern = re`name: ${namePattern}, age: ${agePattern}`.withFlags('i');

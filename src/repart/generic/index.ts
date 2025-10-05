@@ -1,4 +1,4 @@
-export {anyOf, noneOf, wordList, anywordbut} from './builders';
+export {anyOf, noneOf, wordList, anyWordBut} from './builders';
 export {
     capturing, c,
     optional, o,
@@ -28,5 +28,6 @@ export {
     mline,
     paddedline,
     paddedmline,
-    separator, sep
+    separator, sep,
+    gseparator, gsep
 } from './templates';

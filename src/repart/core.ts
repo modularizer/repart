@@ -252,7 +252,7 @@ export function simplePrependName(pattern: string | RegExp, prefix: string): Reg
 
 
 
-export function templateGroup(pattern: string | RegExp, newName?: string): RegExp {
+export function templateGroup(pattern: string | RegExp, newName?: string, groupsParser?: (g: any) => any): RegExp {
     if (newName && disallowedGroupNames.includes(newName)){
         throw new Error(`repart library has disallowed the group name "${newName}" to avoid collisions with some of our property names and custom values`)
     }
@@ -276,6 +276,12 @@ export function templateGroup(pattern: string | RegExp, newName?: string): RegEx
 
     //@ts-ignore
     const parsers = {...(pattern.parsers ?? {})}
+    if (parsers.groups === undefined){
+        parsers.groups = groupsParser ?? ( (_, r) => r.inner);
+    }else if (groupsParser !== undefined){
+        parsers.groups = groupsParser;
+    }
+
     // console.log("og parsers", Object.keys(parsers))
     for (let name of existingNames){
         const rep = `${prefix}${name}`;
