@@ -1,29 +1,29 @@
 {
   "name": "repart",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A TypeScript library for building complex regular expressions and parsing structured data from text with named groups and custom parsers",
-  "main": "dist/repart/index.js",
-  "types": "dist/repart/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/repart/index.d.ts",
-      "default": "./dist/repart/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./common": {
-      "types": "./dist/repart/common/index.d.ts",
-      "default": "./dist/repart/common/index.js"
+      "types": "./dist/common/index.d.ts",
+      "default": "./dist/common/index.js"
     },
     "./generic": {
-      "types": "./dist/repart/generic/index.d.ts",
-      "default": "./dist/repart/generic/index.js"
+      "types": "./dist/generic/index.d.ts",
+      "default": "./dist/generic/index.js"
     },
     "./md": {
-      "types": "./dist/repart/md/index.d.ts",
-      "default": "./dist/repart/md/index.js"
+      "types": "./dist/md/index.d.ts",
+      "default": "./dist/md/index.js"
     },
     "./preprocessors": {
-      "types": "./dist/repart/preprocessors/index.d.ts",
-      "default": "./dist/repart/preprocessors/index.js"
+      "types": "./dist/preprocessors/index.d.ts",
+      "default": "./dist/preprocessors/index.js"
     }
   },
   "keywords": [
