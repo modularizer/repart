@@ -16,7 +16,7 @@ The test suite is organized into the following categories:
 
 ### Builder Methods (`builders.test.ts`)
 - `.withFlags()`, `.addFlags()`, `.removeFlags()`
-- `.wrappedWith()`, `.then()`, `.optional()`, `.repeated()`, `.spaced()`
+- `.wrappedWith()`, `.concat()`, `.optional()`, `.repeated()`, `.spaced()`
 - Method chaining
 - Integration with `re` template
 

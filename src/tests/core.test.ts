@@ -74,7 +74,7 @@ describe('Core Features', () => {
     });
 
     test('should handle chaining with other methods', () => {
-      const pattern = /\d+/.as('id').then('\\s*').as('s');
+      const pattern = /\d+/.as('id').concat('\\s*').as('s');
       expect(pattern.source).toBe('(?<s>(?<id>\\d+)\\s*)');
     });
   });
@@ -403,7 +403,7 @@ describe('Core Features', () => {
     });
 
     test('should chain with other methods', () => {
-      const pattern = /^\d+$/.unanchor().then('\\s*');
+      const pattern = /^\d+$/.unanchor().concat('\\s*');
       expect(pattern.source).toBe('\\d+\\s*');
     });
 

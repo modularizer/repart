@@ -6,7 +6,7 @@ const noop = (s: string) => s;
 
 
 
-const countryCode = re`\+?`.then(re`\d{1,3}`.as('countryCode').optional());
+const countryCode = re`\+?`.concat(re`\d{1,3}`.as('countryCode').optional());
 const globalAreaCode = re`\d{1,5}(?=\D)`.as('areaCode');
 const globaltelephonePrefix = re`\d{2,}(?=\D)`.as('telephonePrefix');
 const globallineNumber = re`\d{2,}`.as('lineNumber');
@@ -25,7 +25,7 @@ export const GLOBAL_PHONE_NUMBER_PATTERN = _GLOBAL_PHONE_NUMBER_PATTERN.withPars
 const telephonePrefix = re`\d{3}`.as('telephonePrefix');
 const lineNumber = re`\d{4}`.as('lineNumber');
 const ussubscriber = re`(?<subscriber>${telephonePrefix}\s*[\.\-]?\s*${lineNumber})`;
-const uscountryCode = re`\+?`.then(re`1`.as('countryCode').optional());
+const uscountryCode = re`\+?`.concat(re`1`.as('countryCode').optional());
 const usAreaCode = re`\d{3}`.as('areaCode');
 export const baseUSPhoneNumber = re`${uscountryCode}\s*[\.\-\(]?\s*${usAreaCode}\s*[\.\-\)]?\s*${ussubscriber}`;
 

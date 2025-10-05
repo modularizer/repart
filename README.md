@@ -69,7 +69,7 @@ console.log(sInd, eInd, input.slice(sInd, eInd)); // 28 42 john@gmail.com
 - [.anchor(mode?, multiline?)](#anchor) - Add anchors: `/\d+/.anchor()` → `/^\d+$/`, `/\d+/.anchor('start')` → `/^\d+/`
 - [.unanchor(mode?, removeMultiline?)](#unanchor) - Remove anchors: `/^\d+$/.unanchor()` → `/\d+/`, `/^\d+$/.unanchor('start')` → `/\d+$/`
 - [.wrappedWith(before, after?)](#wrappedwith) - Wrap a regexp: `/word/.wrappedWith('"')` → `/"word"/` or `/word/.wrappedWith('1 ', '2')` → `/1 word 2 "/`
-- [.then(after)](#then) - Concatenate: `/\d+/.then('\\s*')` → `/\d+\s* /`
+- [.concat(after)](#then) - Concatenate: `/\d+/.concat('\\s*')` → `/\d+\s* /`
 - [.optional()](#optional) - Make optional: `/\d+/.optional()` → `/\d+?/`
 - [.repeated(min?, max?)](#repeated) - Add quantifiers: `/\d/.repeated(1,3)` → `/\d{1,3}/`
 - [.spaced()](#s) - Flexible whitespace: `/hello world/.spaced()` → matches "hello world", "hello  world", etc.
@@ -270,7 +270,7 @@ const optional = /\w+/.as('optional'); // (\w+)?
 const lookbehind = /\d+/.as('lookbehind'); // (?<=\d+)
 
 // Chaining
-const complex = /\d+/.as('id').then('\\s*').as('s'); // (?<s>(?<id>\d+)\s*)
+const complex = /\d+/.as('id').concat('\\s*').as('s'); // (?<s>(?<id>\d+)\s*)
 ```
 
 ---
@@ -415,7 +415,7 @@ const noEnd = /^\d+$/.unanchor('end'); // /^\d+/
 const noMultiline = /^\d+$/m.unanchor('both', true); // /\d+/
 
 // Chain with other methods
-const flexible = /^(?<number>\d+)$/.unanchor().then('\\s*'); // /(?<number>\d+)\s*/
+const flexible = /^(?<number>\d+)$/.unanchor().concat('\\s*'); // /(?<number>\d+)\s*/
 
 // Matching behavior
 const unanchoredPattern = /^\d+$/.unanchor();
@@ -449,7 +449,7 @@ const regexDelims = /\w+/.wrappedWith(re`\(`, re`\)`); // /\(\w+\)/
 const chained = /\d+/.wrappedWith('"').optional(); // /"\d+"?/
 ```
 ---
-### `.then(after)`
+### `.concat(after)`
 Concatenate pattern with another pattern.
 
 **Key Features:**
@@ -460,19 +460,19 @@ Concatenate pattern with another pattern.
 
 ```typescript
 // With strings
-const pattern = /\d+/.then('abc'); // /\d+abc/
+const pattern = /\d+/.concat('abc'); // /\d+abc/
 
 // With RegExp objects
-const emailPattern = /user/.then('@').then(/domain/); // /user@domain/
+const emailPattern = /user/.concat('@').concat(/domain/); // /user@domain/
 
 // Chaining multiple patterns
-const complex = /\d+/.then('\\s*').then(/\w+/).then('\\s*'); // /\d+\s*\w+\s*/
+const complex = /\d+/.concat('\\s*').concat(/\w+/).concat('\\s*'); // /\d+\s*\w+\s*/
 
 // With undefined (no-op)
-const noOp = /\d+/.then(undefined); // /\d+/
+const noOp = /\d+/.concat(undefined); // /\d+/
 
 // Mixed types
-const mixed = /\d+/.then('\\s*').then(re`${/\w+/i}`); // /\d+\s*\w+/i
+const mixed = /\d+/.concat('\\s*').concat(re`${/\w+/i}`); // /\d+\s*\w+/i
 ```
 ---
 ### `.optional()`
@@ -488,10 +488,10 @@ Make pattern optional (0 or 1 matches).
 const pattern = /\d+/.optional(); // /\d+?/ or /(\d+)? /
 
 // Complex optional patterns
-const complex = /\d+/.then('\\s*').then(/\w+/).optional(); // /\d+\s*\w+?/
+const complex = /\d+/.concat('\\s*').concat(/\w+/).optional(); // /\d+\s*\w+?/
 
 // Chaining with other methods
-const chained = /\d+/.optional().then('\\s*').then(/\w+/); // /\d+?\s*\w+/
+const chained = /\d+/.optional().concat('\\s*').concat(/\w+/); // /\d+?\s*\w+/
 
 // With named groups
 const named = /\d+/.as('id').optional(); // (?<id>\d+)?/
@@ -526,7 +526,7 @@ const zeroOrOne = /\w/.repeated(0, 1); // /\w?/
 const exactly3 = /\d/.repeated(3); // /\d{3}/
 
 // Complex patterns
-const complex = /\d+/.then('\\s*').then(/\w+/).repeated(1, 3); // /\d+\s*\w+{1,3}/
+const complex = /\d+/.concat('\\s*').concat(/\w+/).repeated(1, 3); // /\d+\s*\w+{1,3}/
 ```
 ---
 ### `.spaced()`

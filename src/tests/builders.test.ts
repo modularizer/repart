@@ -97,31 +97,31 @@ describe('Builder Methods', () => {
     });
   });
 
-  describe('.then() method', () => {
+  describe('.concat() method', () => {
     test('should concatenate with strings', () => {
-      const pattern = /\d+/.then('abc');
+      const pattern = /\d+/.concat('abc');
       expect(pattern.source).toBe('\\d+abc');
     });
 
     test('should concatenate with RegExp objects', () => {
-      const pattern = /user/.then('@').then(/domain/);
+      const pattern = /user/.concat('@').concat(/domain/);
       expect(pattern.source).toBe('user@domain');
     });
 
     test('should handle chaining multiple patterns', () => {
-      const pattern = /\d+/.then('\\s*').then(/\w+/).then('\\s*');
+      const pattern = /\d+/.concat('\\s*').concat(/\w+/).concat('\\s*');
       expect(pattern.source).toBe('\\d+\\s*\\w+\\s*');
     });
 
     test('should handle undefined (no-op)', () => {
-      const pattern = /\d+/.then(undefined);
+      const pattern = /\d+/.concat(undefined);
       expect(pattern.source).toBe('\\d+');
     });
 
     test('should preserve parsers from both patterns', () => {
       const pattern1 = /\d+/.as("id").withParsers({ id: parseInt });
       const pattern2 = /\w+/.as("name").withParsers({ name: (s: string) => s.toUpperCase() });
-      const combined = pattern1.then(pattern2);
+      const combined = pattern1.concat(pattern2);
       
       expect((combined as any).parsers).toHaveProperty('id');
       expect((combined as any).parsers).toHaveProperty('name');
@@ -130,7 +130,7 @@ describe('Builder Methods', () => {
     test('should combine flags from both patterns', () => {
       const pattern1 = /\d+/i;
       const pattern2 = /\w+/g;
-      const combined = pattern1.then(pattern2);
+      const combined = pattern1.concat(pattern2);
       
       expect(combined.flags).toContain('i');
       expect(combined.flags).toContain('g');
@@ -145,7 +145,7 @@ describe('Builder Methods', () => {
     });
 
     test('should work with complex patterns', () => {
-      const pattern = /\d+/.then('\\s*').then(/\w+/).optional();
+      const pattern = /\d+/.concat('\\s*').concat(/\w+/).optional();
       expect(pattern.source).toBe('(\\d+\\s*\\w+)?');
     });
 
@@ -195,7 +195,7 @@ describe('Builder Methods', () => {
     });
 
     test('should work with complex patterns', () => {
-      const pattern = /\d+/.then('\\s*').then(/\w+/).repeated(1, 3);
+      const pattern = /\d+/.concat('\\s*').concat(/\w+/).repeated(1, 3);
       expect(pattern.source).toBe('(\\d+\\s*\\w+){1,3}');
     });
   });
@@ -241,8 +241,8 @@ describe('Builder Methods', () => {
     test('should support complex chaining', () => {
       const pattern = /\d+/
         .as('id')
-        .then('\\s*')
-        .then(/\w+/.as('name'))
+        .concat('\\s*')
+        .concat(/\w+/.as('name'))
         .wrappedWith('"')
         .optional()
         .withFlags('i');
@@ -255,7 +255,7 @@ describe('Builder Methods', () => {
       const pattern = /\d+/
           .as('id')
         .withParsers({ id: parseInt })
-        .then(/\w+/.as('name').withParsers({ name: (s: string) => s.toUpperCase() }))
+        .concat(/\w+/.as('name').withParsers({ name: (s: string) => s.toUpperCase() }))
         .optional();
       
       expect((pattern as any).parsers).toHaveProperty('id');
@@ -264,7 +264,7 @@ describe('Builder Methods', () => {
 
     test('should handle flags through chaining', () => {
       const pattern = /\d+/i
-        .then(/\w+/g)
+        .concat(/\w+/g)
         .withFlags('m');
       
       expect(pattern.flags).toHaveFlags('dgim');
@@ -287,8 +287,8 @@ describe('Builder Methods', () => {
 
     test('should handle complex template with builders', () => {
       const pattern = re`test`.as('word')
-        .then(re`\s*#?\s*`)
-        .then(re`\d{3}`.as('num').then('?'))
+        .concat(re`\s*#?\s*`)
+        .concat(re`\d{3}`.as('num').concat('?'))
         .as('full')
         .wrappedWith(/\s*/)
         .withFlags('i');

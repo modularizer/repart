@@ -143,7 +143,7 @@ declare global {
          * 
          * @example
          * // Chain with other methods
-         * const flexible = /^(?<number>\d+)$/.unanchor().then('\\s*'); // /(?<number>\d+)\s* /
+         * const flexible = /^(?<number>\d+)$/.unanchor().concat('\\s*'); // /(?<number>\d+)\s* /
          */
         unanchor(mode?: '^' | 'start' | '$' | 'end' | '^$' | 'both', removeMultiline?: boolean): RegExp;
 
@@ -243,10 +243,10 @@ declare global {
          * @returns A new RegExp with the patterns concatenated
          *
          * @example
-         * const pattern = /\d+/.then('\\s*'); // /\d+\s* /
-         * const emailPattern = /user/.then('@').then(/domain/); // /user@domain/
+         * const pattern = /\d+/.concat('\\s*'); // /\d+\s* /
+         * const emailPattern = /user/.concat('@').concat(/domain/); // /user@domain/
          */
-        then(after?: string | RegExp): RegExp;
+        concat(after?: string | RegExp): RegExp;
 
         /**
          * Makes the current RegExp optional (matches 0 or 1 times).
@@ -387,7 +387,7 @@ declare global {
  * - Flag manipulation (withFlags, addFlags, removeFlags)
  * - Parser management (withParsers)
  * - Group creation (as)
- * - Pattern composition (wrappedWith, then)
+ * - Pattern composition (wrappedWith, concat)
  * - Quantifier application (optional, repeated)
  * - Flexible whitespace matching (s)
  *
@@ -455,10 +455,10 @@ export function addToPrototype() {
     });
 
     /**
-     * Implementation of the 'then' method - concatenates patterns.
+     * Implementation of the 'concat' method - concatenates patterns.
      * Creates a new pattern that matches current pattern followed by the given pattern.
      */
-    def('then', function (this: RegExp, after: string | RegExp) {
+    def('concat', function (this: RegExp, after: string | RegExp) {
         return re`${this}${after}`
     });
 
