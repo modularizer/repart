@@ -1,6 +1,6 @@
 {
   "name": "repart",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A TypeScript library for building complex regular expressions and parsing structured data from text with named groups and custom parsers",
   "main": "dist/repart/index.js",
   "types": "dist/repart/index.d.ts",
@@ -26,7 +26,15 @@
       "default": "./dist/repart/preprocessors/index.js"
     }
   },
-  "keywords": ["regex", "regular-expressions", "typescript", "parsing", "text-processing", "named-groups", "template-literals"],
+  "keywords": [
+    "regex",
+    "regular-expressions",
+    "typescript",
+    "parsing",
+    "text-processing",
+    "named-groups",
+    "template-literals"
+  ],
   "author": "Torin",
   "license": "Unlicense",
   "scripts": {
