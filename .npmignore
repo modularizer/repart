@@ -1,0 +1,21 @@
+# Only publish the dist folder
+src/
+tests/
+test/
+*.test.*
+*.spec.*
+jest.config.js
+tsconfig.json
+node_modules/
+package-lock.json
+demos/
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.github/
+README.md

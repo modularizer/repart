@@ -1,6 +1,6 @@
 {
   "name": "repart",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A TypeScript library for building complex regular expressions and parsing structured data from text with named groups and custom parsers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
