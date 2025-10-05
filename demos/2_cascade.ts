@@ -19,10 +19,10 @@
  *  6. split footer => find links
  */
 
-import { re } from '../src/repart/re';
 import { addToPrototype } from '../src/repart/global';
 import {h1, link} from "../src/repart/md";
 import {any, newLine, quote} from "../src/repart/generic";
+import {re} from "../src/repart";
 
 // Initialize the global RegExp extensions
 addToPrototype();

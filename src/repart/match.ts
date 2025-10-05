@@ -614,7 +614,7 @@ export function match(input: string, pattern: string | number | RegExp, {offset 
 }
 
 /** Union type for extracted data - various formats of structured data */
-export type Extracted = Record<string, any> | Record<string, any>[] | null | any[];
+export type Extracted = any | Record<string, any> | Record<string, any>[] | null | any[];
 
 
 /**
@@ -789,7 +789,7 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
 
         // const k2 = k ?? 'groups'
         // d[k2] = {}
-        let o = {};
+        let o: Record<string, any> = {};
         for (const [k3, v3] of Object.entries(v.groups)){
             // console.log("extracting group ", k3)
             extract(new ParsedResult(v3), k3, o);
@@ -811,8 +811,8 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
             okeys = Object.keys(o)
             const n = gk.replace(re`${sep}groups$`, '');
             const pre = n + sep;
-            const inGroup = {};
-            const outOfGroup = {};
+            const inGroup: Record<string, any> = {};
+            const outOfGroup: Record<string, any> = {};
             for (let [k2, v2] of Object.entries(o)){
                 if (k2.startsWith(pre) || k2 === n){
                     inGroup[k2.replace(re`^${pre}`, '')] = v2
@@ -820,16 +820,10 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
                     outOfGroup[k2] = v2
                 }
             }
-            // const outOfGroup = Object.fromEntries(okeys.filter(k2 => !k2.startsWith(pre) && k2 !== n).map(k2 => [k2, o[k2]]));
-            // const inGroup = Object.fromEntries(okeys.filter(k2 => k2.startsWith(pre) || k2 === n).map(k2 => [k2.replace(re`^${pre}`, ''), o[k2]]));
-            // console.log(gk, pre, inGroup)
-            // console.log(gk, "ingroup", inGroup, 'out', outOfGroup)
             if (Object.keys(inGroup).length > 0) {
+                //@ts-ignore
                 let r = allParsers[gk](inGroup, {name: n, outer: {[n]: inGroup[n]}, inner: Object.fromEntries(Object.entries(inGroup).filter(([k2,v2]) => k2 != n))});
-                // r = parseValue(r, allParsers, n, parsedResult.startIndex);
-                // if (r instanceof ParsedResult){
-                //     r = extract(parsedResult, n)
-                // }
+
                 o = {
                     ...outOfGroup,
                     [n]: r
@@ -842,6 +836,7 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
         //@ts-ignore
         const groupsParser = allParsers.groups;
         if(groupsParser){
+            //@ts-ignore
             o = groupsParser(o, {name: k, outer: {[k]: o[k]}, inner: Object.fromEntries(Object.entries(o).filter(([k2, v2]) => k2 !=k))});
         }
 

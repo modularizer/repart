@@ -123,7 +123,7 @@ describe('Generic Builders', () => {
     });
 
     test('should work with word boundaries', () => {
-      const pattern = wordList(['cat', 'dog'], { wordBoundary: true });
+      const pattern = wordList(['cat', 'dog'], { wholeWords: true });
       const result = matchAndExtract('cat', pattern);
       expect(result).toBe('cat');
     });

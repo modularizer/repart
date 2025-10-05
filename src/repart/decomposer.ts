@@ -222,7 +222,7 @@ export class GroupInfo {
         // always show quantifiers in gray and group starts and ends in gray
         // always show names in bold black
         // show level 0 groups in magenta, level 1 cyan, level 2 green, level 3 yellow, level 4 green, level 5 yellow, ...
-        let colorInds = []
+        let colorInds: any[] = []
         const levelColors = [
             [C.magenta, C.cyan],
             [C.green, C.yellow],
@@ -247,7 +247,7 @@ export class GroupInfo {
         let level = -1;
         let i = undefined;
         let color = C.reset;
-        const openGroups = [];
+        const openGroups: any[] = [];
         const groupsRemaining = [...this._allGroups]
         let nextGroupStart = groupsRemaining[0]?.sInd;
         let nextGroupEnd = openGroups[openGroups.length - 1]?.qInd;
@@ -389,7 +389,7 @@ export class GroupInfo {
     }
 
     get topLevelGroupNames(): string[] {
-        return this._capturedGroups.filter(x => x.type === 'named' && x.level === (this.level + 1)).map(x => x.name);
+        return this._capturedGroups.filter(x => x.type === 'named' && x.level === (this.level + 1)).map(x => x.name!);
     }
 
     get namedGroups(){
@@ -403,9 +403,9 @@ export class GroupInfo {
         const namedGroupDetails = this.namedGroupDetails;
         return new Proxy(Object.fromEntries(groupNames.map(k => [k, undefined])), {
             get (target, prop, receiver){
-                if (groupNames.includes(prop)){
+                if (groupNames.includes(prop as string)){
                     const details = namedGroupDetails.find(i => i.name === prop)
-                    const d = GroupInfo.getChild(allGroups, details, rx);
+                    const d = GroupInfo.getChild(allGroups, details!, rx);
                     return d;
                 }
             }

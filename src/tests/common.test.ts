@@ -253,7 +253,7 @@ describe('Common Patterns', () => {
           // throw new Error(`${typeof  result.raw}, ${typeof  result.value}, ${typeof num}`)
           expect(result).not.toBeNull();
           expect(result.float.raw).toBe(num);
-          expect(result.float.value).toBe(parseFloat(num.replace(/[^\d\.]/g,'')));
+          expect(result.float.value).toBe(parseFloat(num.replace(/[^\d.]/g,'')));
         });
       });
 
@@ -444,15 +444,15 @@ describe('Common Patterns', () => {
       test('should match state codes', () => {
         const result = matchAnyState('CA');
         expect(result).toBeDefined();
-        expect(result.state.stateCode).toBe('CA');
-        expect(result.state.stateName).toBe('California');
+        expect(result?.stateCode).toBe('CA');
+        expect(result?.stateName).toBe('California');
       });
 
       test('should match state names', () => {
         const result = matchAnyState('California');
         expect(result).toBeDefined();
-        expect(result.state.stateCode).toBe('CA');
-        expect(result.state.stateName).toBe('California');
+        expect(result?.stateCode).toBe('CA');
+        expect(result?.stateName).toBe('California');
       });
 
 

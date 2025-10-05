@@ -10,7 +10,7 @@ console.log(pattern.match('name: john')) // { name: 'JOHN' }
 const complexPattern = re`(?<indentation>\s*)(?<statement>.*?name):\s*(?<name>\w+)`.withParsers({
     name: (s: string) => s.toUpperCase(),
     indentation: null,  // Ignore this group: in practice, this could have been left unnamed, but if it using prebuilt components you may loose flexibility over names
-    groups: (data) => ({ title: data.name, msg: data.statement })
+    groups: (data: any) => ({ title: data.name, msg: data.statement })
 });
 console.log(complexPattern.match('his name: john')) // { title: 'JOHN', msg: 'his name' }
 

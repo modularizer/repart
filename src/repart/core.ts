@@ -268,7 +268,7 @@ export function templateGroup(pattern: string | RegExp, newName?: string, groups
     const _oldName = getGroupName(pattern);
     let src = source;
     if (newName !== _oldName){
-        src = r`(?<${newName}>${source})`;
+        src = r`(?<${newName as string}>${source})`;
     }
 
     // Create regex to find and replace the named group
@@ -277,7 +277,7 @@ export function templateGroup(pattern: string | RegExp, newName?: string, groups
     //@ts-ignore
     const parsers = {...(pattern.parsers ?? {})}
     if (parsers.groups === undefined){
-        parsers.groups = groupsParser ?? ( (_, r) => r.inner);
+        parsers.groups = groupsParser ?? ( (_: any, r: any) => r.inner);
     }else if (groupsParser !== undefined){
         parsers.groups = groupsParser;
     }

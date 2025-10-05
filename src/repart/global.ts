@@ -217,7 +217,7 @@ declare global {
          *   }
          * });
          */
-        withParsers(parsers: Parsers): RegExp;
+        withParsers(parsers: any): RegExp;
 
         /**
          * Wraps the current RegExp with prefix and suffix patterns.

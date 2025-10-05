@@ -1,4 +1,4 @@
-import {wordList} from "../generic/builders";
+import {wordList} from "../generic";
 
 
 export const stateCodes: Record<string, string> = {
@@ -28,7 +28,7 @@ export const STATE_NAME_PATTERN = wordList(stateNames, {
             const c = invMap[k];
             return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]};
         },
-        groups: (g) => g.raw
+        groups: (g: any) => g.raw
     }).template("state");
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
@@ -44,7 +44,7 @@ export const STATE_CODE_PATTERN = wordList(stateAbbrs, {
             const name = stateCodes[u];
             return {stateName: name, stateCode: s.toUpperCase(), state: s.toUpperCase()};
         },
-    groups: (g) => g.raw
+    groups: (g: any) => g.raw
 }).template("state");
 
 // Abbreviations: case-sensitive (avoids matching the word "or"), no spaces
@@ -65,7 +65,7 @@ export const STATE_PATTERN = wordList([...stateNames,  ...stateAbbrs], {
         const c = invMap[k];
         return {stateName: stateCodes[c], stateCode: c, state: stateCodes[c]}
     },
-    groups: (g) => g.raw
+    groups: (g: any) => g.raw
 }
 ).template("state");
 
@@ -79,5 +79,5 @@ export interface State {
 
 // Helper: matches either names or codes (test both to keep abbrs case-sensitive)
 export function matchAnyState(input: string): State | null {
-    return STATE_PATTERN.matchAndExtract(input);
+    return STATE_PATTERN.matchAndExtract(input)?.state;
 }

@@ -1,5 +1,4 @@
-import { re, r, match, matchAndExtract } from '../repart';
-import { matchRaw, withParsers } from '../repart/match';
+import {re, r} from '../repart';
 import { word, num } from '../repart/generic';
 import {EMAIL_PATTERN, FLOAT_PATTERN} from '../repart/common';
 
@@ -205,11 +204,11 @@ describe('Core Features', () => {
     test('should return RawResult with detailed information', () => {
       const pattern = re`name: ${word.as('name')}, age: ${num.as('age')}`;
       const input = 'name: John, age: 25';
-      const result = pattern.matchRaw(input);
+      const result = pattern.matchRaw(input) as any;
       
       expect(result.startIndex).toBe(0);
       expect(result.endIndex).toBe(input.length);
-      expect(result.raw.raw).toBe('name: John, age: 25');
+      expect(result.raw?.raw).toBe('name: John, age: 25');
       expect(result.groups.name.raw).toBe('John');
       expect(result.groups.age.raw).toBe('25');
     });
@@ -225,7 +224,7 @@ describe('Core Features', () => {
 
     test('should handle multiple matches', () => {
       const pattern = re`${word.as('word')}`.withFlags('g');
-      const result = pattern.matchRaw('hello world').raw;
+      const result = pattern.matchRaw('hello world').raw as any;
       
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(2);
