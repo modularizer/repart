@@ -52,7 +52,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc --noEmit && npm run copy-src",
-    "copy-src": "powershell -Command \"Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; Copy-Item -Path 'src/repart' -Destination 'dist' -Recurse; Get-ChildItem -Path 'dist' -Recurse -Include '*.js', '*.d.ts', '*.map' | Remove-Item -Force\"",
+    "copy-src": "node -e \"const fs=require('fs');const path=require('path');function copyDir(src,dest){if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});const items=fs.readdirSync(src);for(const item of items){const srcPath=path.join(src,item);const destPath=path.join(dest,item);if(fs.statSync(srcPath).isDirectory()){copyDir(srcPath,destPath);}else if(item.endsWith('.ts')&&!item.endsWith('.d.ts')){fs.copyFileSync(srcPath,destPath);}}}if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true,force:true});copyDir('src/repart','dist');\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
