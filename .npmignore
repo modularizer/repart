@@ -1,5 +1,4 @@
-# Only publish the dist folder
-src/
+# Only publish the dist folder (which contains src/repart contents)
 tests/
 test/
 *.test.*
@@ -18,4 +17,4 @@ demos/
 .DS_Store
 Thumbs.db
 .github/
-README.md
+src/

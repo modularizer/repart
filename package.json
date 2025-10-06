@@ -1,37 +1,41 @@
 {
   "name": "repart",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A TypeScript library for building complex regular expressions and parsing structured data from text with named groups and custom parsers",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "common": ["dist/common/index.d.ts"],
-      "generic": ["dist/generic/index.d.ts"],
-      "md": ["dist/md/index.d.ts"],
-      "preprocessors": ["dist/preprocessors/index.d.ts"]
-    }
-  },
+  "main": "dist/index.ts",
+  "types": "dist/index.ts",
+  "browser": "dist/index.ts",
+  "module": "dist/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/index.ts",
+      "import": "./dist/index.ts",
+      "require": "./dist/index.ts",
+      "default": "./dist/index.ts"
     },
     "./common": {
-      "types": "./dist/common/index.d.ts",
-      "default": "./dist/common/index.js"
+      "types": "./dist/common/index.ts",
+      "import": "./dist/common/index.ts",
+      "require": "./dist/common/index.ts",
+      "default": "./dist/common/index.ts"
     },
     "./generic": {
-      "types": "./dist/generic/index.d.ts",
-      "default": "./dist/generic/index.js"
+      "types": "./dist/generic/index.ts",
+      "import": "./dist/generic/index.ts",
+      "require": "./dist/generic/index.ts",
+      "default": "./dist/generic/index.ts"
     },
     "./md": {
-      "types": "./dist/md/index.d.ts",
-      "default": "./dist/md/index.js"
+      "types": "./dist/md/index.ts",
+      "import": "./dist/md/index.ts",
+      "require": "./dist/md/index.ts",
+      "default": "./dist/md/index.ts"
     },
     "./preprocessors": {
-      "types": "./dist/preprocessors/index.d.ts",
-      "default": "./dist/preprocessors/index.js"
+      "types": "./dist/preprocessors/index.ts",
+      "import": "./dist/preprocessors/index.ts",
+      "require": "./dist/preprocessors/index.ts",
+      "default": "./dist/preprocessors/index.ts"
     }
   },
   "keywords": [
@@ -45,8 +49,10 @@
   ],
   "author": "Torin",
   "license": "Unlicense",
+  "files": ["dist"],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --noEmit && npm run copy-src",
+    "copy-src": "powershell -Command \"Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; Copy-Item -Path 'src/repart' -Destination 'dist' -Recurse; Get-ChildItem -Path 'dist' -Recurse -Include '*.js', '*.d.ts', '*.map' | Remove-Item -Force\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
