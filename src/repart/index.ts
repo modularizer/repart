@@ -1,5 +1,7 @@
 export {initialized, init} from "./init"; // Initialize prototype extensions first
-
+import {init} from "./init";
+import "./global"; // Import global RegExp extensions
+init();
 export const registered = true;
 export {getGroupInfo, GroupDetails} from './decomposer';
 export {getAllGroupNames, getGroupName} from './core';
@@ -13,7 +15,7 @@ export {escape, allSpecialChars, type SpecialChar, SpecialCharMeanings} from './
 export {dedup, type RegExpFlag, type RegExpFlags, allRegExpFlags, RegExpFlagMeanings} from './flags';
 export {resolve, readFile} from './file';
 
-// export * as common from './common';
-// export * as generic from './generic';
-// export * as md from './md';
-// export * as pre from './preprocessors';
+export * from './common';
+export * from './generic';
+export * from './md';
+export * from './preprocessors';

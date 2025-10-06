@@ -24,8 +24,8 @@
  *  extract(ParsedResult) => Result (custom class)
  *       .extracted: Extracted (bare)
  */
-import {RegExpFlags} from "./flags";
-import {re} from "./core";
+import {regexpFlags, RegExpFlags} from "./flags";
+import {dedup, re} from "./core";
 import {getAllGroupNames} from "./grouping";
 
 
@@ -221,22 +221,22 @@ export class RawResult {
  */
 export function matchRaw(input: string, pattern: string | number | RegExp, {maxMatches = undefined, offset = 0, flags, lastIndex = 0, name, cacheInput = false}: RawMatchParams = {}): RawResult  {
     pattern = re`${pattern}` as RegExp;
-    if (flags && (pattern as any).withFlags) {
-        pattern = (pattern as any).withFlags(flags);
+    let f = pattern.flags;
+    if (flags) {
+        f += regexpFlags(flags);
     }
     if (maxMatches === undefined) {
-        maxMatches = ((pattern as RegExp).flags.includes('g')?Infinity:1)
+        maxMatches = f.includes('g')?Infinity:1
     }else if(maxMatches === null){
         maxMatches = Infinity;
     }
-    if (maxMatches > 1 && !(pattern as RegExp).flags.includes('g')){
-        if ((pattern as any).addFlags) {
-            pattern = (pattern as any).addFlags('g')
-        }
+    if (maxMatches > 1 && !f.includes('g')){
+        f += 'g';
     }
-    if ((pattern as any).addFlags) {
-        pattern = (pattern as any).addFlags('d');
-    }
+    f += 'd';
+    const parsers = pattern.parsers;
+    pattern = new RegExp(pattern, dedup(f));
+    pattern.parsers = parsers;
     (pattern as RegExp).lastIndex = lastIndex;
     let m = (pattern as RegExp).exec(input); // or: for (const m of s.matchAll(rx)) { ... }
     let i = 0;
@@ -511,6 +511,7 @@ export class ParsedResult {
 export function parseValue(raw: any, parsers: Record<string, StringParser>, key: string, offset: number = 0){
     const hasNamedParser = Object.keys(parsers).some(k => k === key);
     const hasSilentParser = Object.keys(parsers).some(k => k === '_' + key);
+    // console.log("parsing", key, hasNamedParser, hasSilentParser, parsers)
     const parser = (hasNamedParser ? parsers[key] : parsers['_' + key]) ?? parsers['_'] ?? defaultStringParser;
     let parsed: any = raw;
     if ((hasSilentParser && parsers['_' + key] === null)) {
@@ -740,7 +741,6 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
         const n = firstKeys.length;
         let ret = results;
         if (n === 1){
-
             const k = firstKeys[0];
 
             if (resultGroups.every(o => Object.keys(o).length === 1 && Object.keys(o)[0] ===k)){
@@ -786,15 +786,11 @@ export function extract(parsedResult: ParsedResult, k?: string, d: Record<string
     k = k ?? v.name;
 
     if (Object.keys(v.groups).length){
-
-        // const k2 = k ?? 'groups'
-        // d[k2] = {}
         let o: Record<string, any> = {};
         for (const [k3, v3] of Object.entries(v.groups)){
             // console.log("extracting group ", k3)
             extract(new ParsedResult(v3), k3, o);
         }
-
 
         const countBlanks = (s: string) => (s.match(re`${sep}`.withFlags('g')) || []).length;
         const allParsers = (v.pattern.parsers ?? {});
