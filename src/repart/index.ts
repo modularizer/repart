@@ -1,7 +1,14 @@
-export {initialized, init} from "./init"; // Initialize prototype extensions first
-import {init} from "./init";
-import "./global"; // Import global RegExp extensions
-init();
+import {RepartRegExp, addToPrototype} from "./global";
+declare global {
+    interface RegExp extends RepartRegExp {}
+}
+
+// Call addToPrototype immediately when this module is imported
+addToPrototype();
+
+export const initialized = true;
+export const init = () => true;
+
 export const registered = true;
 export {getGroupInfo, GroupDetails} from './decomposer';
 export {getAllGroupNames, getGroupName} from './core';

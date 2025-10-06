@@ -1,4 +1,4 @@
-import {initialized} from "../init";
+import {initialized} from "..";
 const x = initialized;
 
 export {
