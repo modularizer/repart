@@ -1,5 +1,6 @@
 // FIXME: find a way to conditionally make terminal colors available to server environments
-export const colors = {
+const isServer = typeof window === 'undefined';
+export const colors = isServer?{
     reset: '\x1b[0m',
     red: '\x1b[31m',
     dim: '\x1b[2m',
@@ -13,19 +14,19 @@ export const colors = {
     blue: '\x1b[34m',
     gray: '\x1b[90m',
     orange: '\x1b[38;2;255;165;0m',
+}:{
+    reset: '',
+    red: '',
+    dim: '',
+    normal: '', // undim (also cancels bold)
+    bold: '',
+    cyan: '',
+    yellow: '',
+    green: '',
+    magenta: '',
+    brightMagenta: '',
+    blue: '',
+    gray: '',
+    orange: '',
 };
-// export const colors = {
-//     reset: '',
-//     red: '',
-//     dim: '',
-//     normal: '',
-//     bold: '',
-//     cyan: '',
-//     yellow: '',
-//     green: '',
-//     magenta: '',
-//     brightMagenta: '',
-//     blue: '',
-//     gray: '',
-//     orange: '',
-// };
+// export const colors = Object.fromEntries(Object.entries(_colors).map(([k, v]) => [k, _pre + v + 'm']));
