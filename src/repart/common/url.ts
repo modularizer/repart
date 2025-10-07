@@ -1,6 +1,4 @@
-import {re} from "../core";
-
-
+import {re} from "..";
 
 
 const scheme = re`(?:(?<scheme>https?|ftp):\/\/)`;

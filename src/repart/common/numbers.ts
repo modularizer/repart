@@ -1,4 +1,4 @@
-import {re} from "../core";
+import {re} from "..";
 export type NumberLocale = "us" | "eu" | "_";
 export const defaultLocale: NumberLocale = "us";
 
@@ -24,12 +24,12 @@ function buildGroupedIntegerAlt(
     minDigits?: number,
     maxDigits?: number
 ): string | null {
-    // If no bounds, allow classic grouping: 1–3 then (sep 3){1,}
+    // If no bounds, allow classic grouping: 1\u20133 then (sep 3){1,}
     if (minDigits == null && maxDigits == null) {
         return String.raw`\d{1,3}(?:${thousands}\d{3})+`;
     }
 
-    // With bounds, enumerate valid (lead,k) combos where totalDigits = lead + 3*k, k>=1, lead∈[1,3]
+    // With bounds, enumerate valid (lead,k) combos where totalDigits = lead + 3*k, k>=1, lead\u2208[1,3]
     const lo = Math.max(1, minDigits ?? 1);
     const hi = Math.max(lo, maxDigits ?? 99); // sane upper bound
     const alts: string[] = [];

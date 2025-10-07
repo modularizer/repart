@@ -1,4 +1,4 @@
-import {wordList} from "../generic";
+import {wordList} from "..";
 
 
 export const stateCodes: Record<string, string> = {

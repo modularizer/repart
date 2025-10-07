@@ -1,6 +1,5 @@
 /* match a block comment between triple backticks */
-import {re} from "../core";
-import {p, tripleQuote} from "../generic";
+import {re, p, tripleQuote} from "..";
 
 
 export function htmlComment (strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {

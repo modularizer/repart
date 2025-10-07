@@ -1,5 +1,4 @@
-import {escape} from "../special";
-import {_simpleWithParsers, patternHasUnicode, r, re} from "../core";
+import {escape, _simpleWithParsers, patternHasUnicode, r, re} from "..";
 
 export function anyOf(...parts: (RegExp | string)[]) {
     let parsers = {};

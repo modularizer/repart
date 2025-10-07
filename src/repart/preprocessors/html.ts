@@ -17,41 +17,41 @@ export const htmlEntityToChar: Record<string, string> = {
     "&thinsp;": " ", // thin space
 
     // Dashes & ellipsis
-    "&ndash;": "–",
-    "&mdash;": "—",
-    "&hellip;": "…",
+    "&ndash;": "\u2013",
+    "&mdash;": "\u2014",
+    "&hellip;": "\u2026",
 
     // Symbols
-    "&copy;": "©",
-    "&reg;": "®",
-    "&trade;": "™",
-    "&deg;": "°",
+    "&copy;": "\u00a9",
+    "&reg;": "\u00ae",
+    "&trade;": "\u2122",
+    "&deg;": "\u00b0",
 
     // Currency
-    "&euro;": "€",
-    "&pound;": "£",
-    "&yen;": "¥",
-    "&cent;": "¢",
+    "&euro;": "\u20ac",
+    "&pound;": "\u00a3",
+    "&yen;": "\u00a5",
+    "&cent;": "\u00a2",
     "&dollar;": "$", // not official but sometimes appears
 
     // Math-ish
-    "&plusmn;": "±",
-    "&times;": "×",
-    "&divide;": "÷",
-    "&le;": "≤",
-    "&ge;": "≥",
+    "&plusmn;": "\u00b1",
+    "&times;": "\u00d7",
+    "&divide;": "\u00f7",
+    "&le;": "\u2264",
+    "&ge;": "\u2265",
 
     // Accents (very common in text dumps)
-    "&aacute;": "á",
-    "&eacute;": "é",
-    "&iacute;": "í",
-    "&oacute;": "ó",
-    "&uacute;": "ú",
-    "&ntilde;": "ñ",
-    "&uuml;": "ü",
+    "&aacute;": "\u00e1",
+    "&eacute;": "\u00e9",
+    "&iacute;": "\u00ed",
+    "&oacute;": "\u00f3",
+    "&uacute;": "\u00fa",
+    "&ntilde;": "\u00f1",
+    "&uuml;": "\u00fc",
 };
 
-// Build reverse map (char → entity). If multiple entities map to same char, pick a “preferred” one.
+// Build reverse map (char \u2192 entity). If multiple entities map to same char, pick a "preferred" one.
 export const charToHtmlEntity: Record<string, string> = {};
 for (const key of Object.keys(htmlEntityToChar)) {
     const char = htmlEntityToChar[key];

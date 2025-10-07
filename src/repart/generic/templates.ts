@@ -2,9 +2,8 @@
  * Template functions for building common RegExp patterns with specific flags.
  * These functions provide convenient shortcuts for common regex operations.
  */
-import {re, stack} from "../core";
-import {any, anything, endLine, newLine, space, startLine} from "./patterns";
-import {lookahead, negativeLookahead} from "./groups";
+import {re} from "..";
+import {any, newLine} from "./patterns";
 
 
 

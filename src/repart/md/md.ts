@@ -1,5 +1,5 @@
+import {re} from "..";
 import {anything, newLine, space, startLine, line, lookahead} from "../generic";
-import {re} from "../core";
 
 export function li(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {
     return re`${startLine}(\s*[\*\-]?\s*)${re(strings, ...vals)}`

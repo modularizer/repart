@@ -1,6 +1,4 @@
-import {re} from "../core";
-import {UnnamedGroupType, UnnamedGroupTypeAliases} from "../grouping";
-import {disallowedGroupNames, simpleRename} from "../core";
+import {re,UnnamedGroupType, UnnamedGroupTypeAliases, simpleRename} from "..";
 
 export function capturing(strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>){
     return re`(${re(strings, ...vals)})`

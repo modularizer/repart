@@ -1,6 +1,4 @@
-import {asString, re} from "../core";
-import {dedup} from "../flags";
-import {space} from "./patterns";
+import {asString, re} from "..";
 
 export function replacedPattern(replacements: [string| RegExp, string | number | RegExp][]){
     return function (strings: TemplateStringsArray, ...vals: Array<string | number | RegExp>) {

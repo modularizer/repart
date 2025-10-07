@@ -1,6 +1,6 @@
-import {re} from "../core";
+import {re} from "..";
 
-const tel = /(tel:)?/
+const tel = /(tel:)?/;
 
 const noop = (s: string) => s;
 
@@ -14,7 +14,7 @@ const globalsubscriber = re`(?=(\d[\(\)\s\-\.]*){4,10})\s*[\.\-\(]?\s*${globalte
 export const baseGlobalPhoneNumber = re`${countryCode}\s*[\.\-\(]?\s*${globalAreaCode}\s*[\.\-\)]?\s*${globalsubscriber}`;
 const ext = re`(?<fullextensionstring>(?:\s*(?:,|;)?\s*(?:ext(?:ension)?|extn|x\.?|#|-)\s*[:\.]?\s*(?<extension>\d{1,6})))?`;
 
-const _GLOBAL_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseGlobalPhoneNumber}${ext}`.as('phone')
+const _GLOBAL_PHONE_NUMBER_PATTERN = re`${tel}\s*${baseGlobalPhoneNumber}${ext}`.as('phone');
 export const GLOBAL_PHONE_NUMBER_PATTERN = _GLOBAL_PHONE_NUMBER_PATTERN.withParsers({
     '*': noop,
     groups: (g: any) => new PhoneNumber(g, _GLOBAL_PHONE_NUMBER_PATTERN)
@@ -105,7 +105,7 @@ export const countryCodes: Record<string, string> = {
     "222": "Mauritania",
     "223": "Mali",
     "224": "Guinea",
-    "225": "Côte d’Ivoire",
+    "225": "C\u00f4te d'Ivoire",
     "226": "Burkina Faso",
     "227": "Niger",
     "228": "Togo",
@@ -119,7 +119,7 @@ export const countryCodes: Record<string, string> = {
     "236": "Central African Republic",
     "237": "Cameroon",
     "238": "Cape Verde",
-    "239": "São Tomé and Príncipe",
+    "239": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
     "240": "Equatorial Guinea",
     "241": "Gabon",
     "242": "Republic of the Congo",
@@ -140,7 +140,7 @@ export const countryCodes: Record<string, string> = {
     "258": "Mozambique",
     "260": "Zambia",
     "261": "Madagascar",
-    "262": "Réunion / Mayotte",
+    "262": "R\u00e9union / Mayotte",
     "263": "Zimbabwe",
     "264": "Namibia",
     "265": "Malawi",
@@ -161,7 +161,7 @@ export const countryCodes: Record<string, string> = {
     "355": "Albania",
     "356": "Malta",
     "357": "Cyprus",
-    "358": "Finland / Åland Islands",
+    "358": "Finland / \u00c5land Islands",
     "359": "Bulgaria",
     "370": "Lithuania",
     "371": "Latvia",
@@ -193,7 +193,7 @@ export const countryCodes: Record<string, string> = {
     "507": "Panama",
     "508": "Saint Pierre and Miquelon",
     "509": "Haiti",
-    "590": "Guadeloupe / Saint Barthélemy / Saint Martin",
+    "590": "Guadeloupe / Saint Barth\u00e9lemy / Saint Martin",
     "591": "Bolivia",
     "592": "Guyana",
     "593": "Ecuador",
@@ -202,7 +202,7 @@ export const countryCodes: Record<string, string> = {
     "596": "Martinique",
     "597": "Suriname",
     "598": "Uruguay",
-    "599": "Caribbean Netherlands / Curaçao",
+    "599": "Caribbean Netherlands / Cura\u00e7ao",
     "670": "Timor-Leste",
     "672": "Norfolk Island",
     "673": "Brunei",

@@ -1,5 +1,5 @@
-import {initialized} from "..";
-const x = initialized;
+import {init} from "..";
+init();
 
 export {
     htmlComment,

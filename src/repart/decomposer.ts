@@ -1,5 +1,6 @@
 import {asString, re} from "./core";
 import {groupStarts, GroupType} from "./grouping";
+import {colors} from "./colors";
 
 const gn = re`(?<groupname>\w+)`;
 const unescaped = /(?<!\\)/
@@ -201,36 +202,24 @@ export class GroupInfo {
 
 
     toString(): string {
-
-        const C = {
-            reset: '\x1b[0m',
-            red: '\x1b[31m',
-            dim: '\x1b[2m',
-            normal: '\x1b[22m', // undim (also cancels bold)
-            bold: '\x1b[1m',
-            cyan: '\x1b[36m',
-            yellow: '\x1b[33m',
-            green: '\x1b[32m',
-            magenta: '\x1b[35m',
-            brightMagenta: '\x1b[95m',
-            blue: '\x1b[34m',
-            gray: '\x1b[90m',
-            orange: '\x1b[38;2;255;165;0m',
-        };
-        if (!this._hasGroups) return `${C.reset}${C.red}/${C.reset}${this.source}${C.red}/${this.flags}${C.reset}`
+        // Check if we're in a browser environment (no process or process.env)
+        // const isBrowser = typeof process === 'undefined' || !process.env;
+        
+        
+        if (!this._hasGroups) return `${colors.reset}${colors.red}/${colors.reset}${this.source}${colors.red}/${this.flags}${colors.reset}`
         // make a colored version showing specificaly named groups and quantifiers.
         // always show quantifiers in gray and group starts and ends in gray
         // always show names in bold black
         // show level 0 groups in magenta, level 1 cyan, level 2 green, level 3 yellow, level 4 green, level 5 yellow, ...
         let colorInds: any[] = []
         const levelColors = [
-            [C.magenta, C.cyan],
-            [C.green, C.yellow],
-            [C.blue, C.brightMagenta],
-            [C.red, C.orange]
+            [colors.magenta, colors.cyan],
+            [colors.green, colors.yellow],
+            [colors.blue, colors.brightMagenta],
+            [colors.red, colors.orange]
         ]
         function getGroupColor(level: number){
-            if (level < 0) return C.reset;
+            if (level < 0) return colors.reset;
             const opts = levelColors[level % 4];
             while (colorInds.length <= level){
                 colorInds.push(-1)
@@ -239,14 +228,14 @@ export class GroupInfo {
             colorInds[level] = i;
             return opts[i];
             // colorInd = (colorInd +1) % 6;
-            // return [C.magenta, C.cyan, C.brightMagenta, C.green, C.yellow, C.blue][colorInd]
+            // return [colors.magenta, colors.cyan, colors.brightMagenta, colors.green, colors.yellow, colors.blue][colorInd]
         }
 
         const src = this._source;
         let s = '';
         let level = -1;
         let i = undefined;
-        let color = C.reset;
+        let color = colors.reset;
         const openGroups: any[] = [];
         const groupsRemaining = [...this._allGroups]
         let nextGroupStart = groupsRemaining[0]?.sInd;
@@ -279,7 +268,7 @@ export class GroupInfo {
                 const lastOpen = openGroups[openGroups.length - 1];
                 if ((lastOpen?.level  ?? -1)!== level){
                     level = lastOpen?.level  ?? -1;
-                    color = lastOpen?.color ?? C.reset;
+                    color = lastOpen?.color ?? colors.reset;
                     s += color;
                 }
             }
@@ -294,7 +283,7 @@ export class GroupInfo {
 
                     openGroups.push({...g, color});
                     if (g.type === 'named') {
-                        s += `(?<${C.bold}${g.name}${C.normal}>`;
+                        s += `(?<${colors.bold}${g.name}${colors.normal}>`;
                         i = g.cInd;
                     } else {
                         s += src.slice(g.sInd, g.cInd);
@@ -311,9 +300,9 @@ export class GroupInfo {
         const s2 = s.replace(/\x1b\[[0-9;]*m/g, '');
         if (s2 != src){
             console.error("put together invalid string")
-            return `${C.reset}${C.red}/${C.reset}${src}${C.red}/${this.flags}${C.reset}`
+            return `${colors.reset}${colors.red}/${colors.reset}${src}${colors.red}/${this.flags}${colors.reset}`
         }
-        return `${C.reset}${C.red}/${C.reset}${s}${C.red}/${this.flags}${C.reset}`
+        return `${colors.reset}${colors.red}/${colors.reset}${s}${colors.red}/${this.flags}${colors.reset}`
 
     }
 

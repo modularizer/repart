@@ -3,7 +3,6 @@
  * This module provides fundamental group manipulation capabilities that can be used
  * by other modules without creating circular dependencies.
  */
-import {Parsers} from "./match";
 
 export const dedup = (s: string) =>  [...new Set(s)].join("");
 
@@ -70,7 +69,7 @@ export function r(strings: TemplateStringsArray, ...vals: Array<string | number 
     return out;
 }
 
-export function _simpleWithParsers(rx: RegExp, parsers: Parsers = {}){
+export function _simpleWithParsers(rx: RegExp, parsers: any = {}){
     // simple internal withparsers
     if (rx && parsers){
         Object.defineProperty(rx, 'parsers', {
