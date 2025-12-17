@@ -10,14 +10,13 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^../repart$': '<rootDir>/src/repart/index.ts',
     '^../repart/(.*)$': '<rootDir>/src/repart/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/src/tests/jest-setup.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      isolatedModules: true,
       skipLibCheck: true,
       compilerOptions: {
         strict: false,

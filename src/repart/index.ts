@@ -20,7 +20,6 @@ export {match, extract, matchAndExtract, tryjson,
 } from './match';
 export {escape, allSpecialChars, type SpecialChar, SpecialCharMeanings} from './special';
 export {dedup, type RegExpFlag, type RegExpFlags, allRegExpFlags, RegExpFlagMeanings} from './flags';
-export {resolve, readFile} from './file';
 export {type UnnamedGroupType, UnnamedGroupTypeAliases} from "./grouping";
 
 export * from './generic';
