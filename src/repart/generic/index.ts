@@ -5,7 +5,7 @@ export {
     nonCapturing, nc,
     lookahead, negativeLookahead,
     lookbehind, negativeLookbehind,
-    special, as
+    type special, as
 } from './groups';
 export {
     newLine, endLine, startLine,
